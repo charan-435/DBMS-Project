@@ -39,7 +39,7 @@ if ($conn->connect_error) {
 }
 
 // CSV file path
-$file = "../../data/add_revenue.csv";
+$file = "./data/add_revenue.csv";
 
 if (($handle = fopen($file, "r")) !== FALSE) {
 
@@ -55,16 +55,50 @@ if (($handle = fopen($file, "r")) !== FALSE) {
     foreach ($columns as $index => $col) {
         $col = preg_replace('/[^a-zA-Z0-9_]/', '_', $col);
 
+        // Define types
+        switch ($col) {
+            case 'tmdb_id':
+                $type = "BIGINT";
+                break;
+            case 'imdb_id':
+                $type = "VARCHAR(20)";
+                break;
+            case 'release_date':
+                $type = "DATE";
+                break;
+            case 'rating_tmdb':
+            case 'rating_imdb':
+                $type = "FLOAT";
+                break;
+            case 'votes_imdb':
+            case 'runtimeMinutes':
+                $type = "INT";
+                break;
+            case 'revenue':
+                $type = "BIGINT";
+                break;
+            case 'language':
+            case 'genres':
+                $type = "VARCHAR(255)";
+                break;
+            case 'director':
+                $type = "VARCHAR(255)";
+                break;
+            default:
+                $type = "TEXT";
+        }
+
         if ($index == 0) {
-            // First column as PRIMARY KEY
-            $col_sql .= "`$col` VARCHAR(255),";
+            $col_sql .= "`$col` $type,";
             $primaryKey = "PRIMARY KEY (`$col`)";
         } else {
-            $col_sql .= "`$col` TEXT,";
+            $col_sql .= "`$col` $type,";
         }
     }
 
     $col_sql .= $primaryKey;
+
+    
     $createTable = "CREATE TABLE IF NOT EXISTS $table ($col_sql)";
 
     if (!$conn->query($createTable)) {

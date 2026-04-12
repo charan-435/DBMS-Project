@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/backend/DataService.php';
+require_once __DIR__ . '/../../backend/DataService.php';
 
 $service = new DataService();
 $genreStats = $service->getGenreStats(6);
