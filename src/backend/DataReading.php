@@ -1,3 +1,30 @@
+
+<?php
+$host = "localhost";
+$user = "root";
+$pass = "";
+
+// Connect WITHOUT database first
+$conn = new mysqli($host, $user, $pass);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Create database
+$db = "cinematic_lens_db";
+
+$sql = "CREATE DATABASE IF NOT EXISTS $db";
+
+if ($conn->query($sql) === TRUE) {
+    echo "✅ Database created or already exists<br>";
+} else {
+    die("❌ Error creating database: " . $conn->error);
+}
+
+// Now connect to that DB
+$conn->select_db($db);
+?>
 <?php
 
 
