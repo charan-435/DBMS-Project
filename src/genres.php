@@ -119,6 +119,7 @@ function getGenreClass2($genre) {
           
           <?php if (!empty($langStats)):
             $maxLang = max(array_column($langStats, 'movie_count'));
+            $totalLang=array_sum(array_column($langStats, 'movie_count'));
             if ($maxLang == 0) $maxLang = 1;
           ?>
             <?php foreach ($langStats as $index => $lang):

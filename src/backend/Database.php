@@ -16,6 +16,7 @@ class Database {
                     self::$password
                 );
                 self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                
             } catch(PDOException $exception) {
                 // To avoid breaking the UI completely if the DB is not yet set up,
                 // we'll suppress the generic death and just return null.
