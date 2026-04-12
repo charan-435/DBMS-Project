@@ -1,4 +1,3 @@
-
 <?php
 $host = "localhost";
 $user = "root";
@@ -66,6 +65,11 @@ if (($handle = fopen($file, "r")) !== FALSE) {
     }
 
     $col_sql .= $primaryKey;
+    $createTable = "CREATE TABLE IF NOT EXISTS $table ($col_sql)";
+
+    if (!$conn->query($createTable)) {
+        die("❌ Table creation failed: " . $conn->error);
+    }
 
     // Insert data
     while (($row = fgetcsv($handle)) !== FALSE) {
