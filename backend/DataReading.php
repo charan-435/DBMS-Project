@@ -72,7 +72,7 @@ $stmtGetActor = $db->prepare("SELECT actor_id FROM Actors WHERE first_name = ? A
 $stmtMovie = $db->prepare("INSERT INTO Movies (title, release_year, budget, director_id, genre_id) VALUES (?, ?, ?, ?, ?)");
 $stmtMovieActor = $db->prepare("INSERT IGNORE INTO Movie_Actors (movie_id, actor_id) VALUES (?, ?)");
 
-$file = fopen('add_revenue.csv', 'r');
+$file = fopen('./data/add_revenue.csv', 'r');
 if ($file !== false) {
     fgetcsv($file); 
 
