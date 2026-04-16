@@ -1,11 +1,12 @@
 <?php
 $host = "localhost";
-$user = "root";
+$user = "roott";
 $pass = "";
+$port = "3307";
 
 // Connect WITHOUT database first
-$conn = new mysqli($host, $user, $pass);
-
+#$conn = new mysqli($host, $user, $pass);
+$conn = new mysqli($host, $user, $pass, "", $port);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -28,12 +29,13 @@ $conn->select_db($db);
 
 
 $host = "localhost";
-$user = "root";
+$user = "roott";
 $pass = "";
 $db = "cinematic_lens_db";
 
 // Connect to MySQL
-$conn = new mysqli($host, $user, $pass, $db);
+#$conn = new mysqli($host, $user, $pass, $db);
+$conn = new mysqli($host, $user, $pass, $db, $port);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
