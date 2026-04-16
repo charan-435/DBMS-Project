@@ -1,17 +1,4 @@
 <?php
-<<<<<<< HEAD
-$host = "localhost";
-$user = "roott";
-$pass = "";
-$port = "3307";
-
-// Connect WITHOUT database first
-#$conn = new mysqli($host, $user, $pass);
-$conn = new mysqli($host, $user, $pass, "", $port);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-=======
 set_time_limit(0);
 require_once 'Database.php';
 
@@ -21,7 +8,6 @@ $db = Database::getConnection();
 $db->exec("SET FOREIGN_KEY_CHECKS = 0");
 $db->exec("DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres");
 $db->exec("SET FOREIGN_KEY_CHECKS = 1");
->>>>>>> main
 
 // 2. Create the tables (Now INCLUDING language and rating_imdb)
 $db->exec("
