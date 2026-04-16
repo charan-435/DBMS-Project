@@ -10,6 +10,12 @@ class Database {
     public static function getConnection() {
         if (self::$conn === null) {
             try {
+                // First connect WITHOUT the database name to create it if it doesn't exist
+                $tempConn = new PDO("mysql:host=" . self::$host . ";charset=utf8", self::$username, self::$password);
+                $tempConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $tempConn->exec("CREATE DATABASE IF NOT EXISTS " . self::$db_name);
+                
+                // Now connect TO the specific database
                 self::$conn = new PDO(
                     "mysql:host=" . self::$host . ";dbname=" . self::$db_name . ";charset=utf8",
                     self::$username,
@@ -18,10 +24,8 @@ class Database {
                 self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
             } catch(PDOException $exception) {
-                // To avoid breaking the UI completely if the DB is not yet set up,
-                // we'll suppress the generic death and just return null.
                 error_log("Database Connection Error: " . $exception->getMessage());
-                return null;
+                die("Database Connection Error: " . $exception->getMessage());
             }
         }
         return self::$conn;
