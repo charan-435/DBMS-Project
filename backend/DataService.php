@@ -212,6 +212,8 @@ class DataService {
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
                 JOIN Actors a ON ma.actor_id = a.actor_id
+                WHERE d.first_name NOT LIKE '%Unknown%' 
+                  AND a.first_name NOT LIKE '%Unknown%'
                 GROUP BY d.director_id, a.actor_id
                 ORDER BY count DESC
                 LIMIT :limit
@@ -274,7 +276,7 @@ class DataService {
                 SELECT g.genre_name as primary_genre, COUNT(m.movie_id) as club_count
                 FROM Movies m
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.budget >= 1000000000 
+                WHERE m.budget >= 100000000 
                 GROUP BY g.genre_id
                 ORDER BY club_count DESC
                 LIMIT :limit
@@ -292,6 +294,7 @@ class DataService {
                 SELECT CONCAT(a.first_name, ' ', a.last_name) as name, COUNT(ma.movie_id) as count
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                WHERE a.first_name NOT LIKE '%Unknown%'
                 GROUP BY a.actor_id
                 ORDER BY count DESC
                 LIMIT :limit
