@@ -24,12 +24,5 @@
     </a>
   </nav>
 
-  <div class="sidebar-bottom">
-    <a href="#" class="nav-item">
-      <span class="nav-icon">&#x2753;</span> Support
-    </a>
-    <a href="#" class="nav-item">
-      <span class="nav-icon">&#x1F6AA;</span> Sign Out
-    </a>
-  </div>
+ 
 </aside>
