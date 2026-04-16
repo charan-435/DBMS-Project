@@ -80,7 +80,7 @@ function getSentiment($rating) {
         </p>
         <div class="hero-actions">
           <a href="genres.php" class="btn-accent">Explore Trends &#x2197;</a>
-          <a href="index.php" class="btn-outline">Regional Insights</a>
+          <a href="industry.php" class="btn-outline">Regional Insights</a>
         </div>
       </div>
 
@@ -165,68 +165,9 @@ function getSentiment($rating) {
           </div>
         </div>
 
-        <!-- Editorial Pick -->
-        <div class="editorial-card">
-          <div class="editorial-content">
-            <div class="editorial-label">EDITORIAL PICK</div>
-            <h3 class="editorial-title">The Evolution of the 'Angry Young Man' Archetype</h3>
-            <a href="#" class="editorial-link">Read Collection &#x2192;</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- TRENDING NOW TABLE -->
-      <div class="card">
-        <div class="trending-header">
-          <div>
-            <div class="trending-label">LIVE DATA</div>
-            <h2 class="trending-title">Trending Now</h2>
-          </div>
-          <a href="#" class="trending-link">View All Records &#x1F517;</a>
-        </div>
-
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Film Title</th>
-              <th>Director</th>
-              <th>Genre</th>
-              <th>IMDB Score</th>
-              <th>Sentiment</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($trending as $movie): 
-              $primaryGenre = trim(explode(',', $movie['genres'])[0]);
-              $genreClass = getGenreClass($primaryGenre);
-              $lang = $langMap[$movie['language'] ?? ''] ?? ucfirst($movie['language'] ?? '');
-              $sentiment = getSentiment($movie['rating_imdb']);
-              $emojis = ['&#x1F3AC;', '&#x1F3A5;', '&#x1F39E;', '&#x1F4FD;', '&#x1F3A6;'];
-              $emoji = $emojis[array_rand($emojis)];
-            ?>
-            <tr>
-              <td>
-                <div class="film-cell">
-                  <div class="film-poster"><?= $emoji ?></div>
-                  <div>
-                    <div class="film-name"><?= htmlspecialchars($movie['title']) ?></div>
-                    <div class="film-meta"><?= $lang ?> &bull; <?= $movie['yr'] ?? '' ?></div>
-                  </div>
-                </div>
-              </td>
-              <td><?= htmlspecialchars($movie['director']) ?></td>
-              <td><span class="genre-badge <?= $genreClass ?>"><?= htmlspecialchars(strtoupper($primaryGenre)) ?></span></td>
-              <td>
-                <div class="imdb-score">
-                  <span class="imdb-star">&#x2605;</span>
-                  <?= number_format($movie['rating_imdb'], 1) ?>
-                </div>
-              </td>
-              <td><span class="sentiment-badge <?= $sentiment['class'] ?>"><?= $sentiment['label'] ?></span></td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
+     
+   
+       
       </div>
 
       <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
