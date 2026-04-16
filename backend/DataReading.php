@@ -71,6 +71,9 @@ if (($handle = fopen($file, "r")) !== FALSE) {
                 $type = "FLOAT";
                 break;
             case 'votes_imdb':
+
+                $type = "INT";
+                break;
             case 'runtimeMinutes':
                 $type = "INT";
                 break;
