@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 $host = "localhost";
 $user = "roott";
 $pass = "";
@@ -10,122 +11,147 @@ $conn = new mysqli($host, $user, $pass, "", $port);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
+=======
+set_time_limit(0);
+require_once 'Database.php';
 
-// Create database
-$db = "cinematic_lens_db";
+$db = Database::getConnection();
 
-$sql = "CREATE DATABASE IF NOT EXISTS $db";
+// 1. Clear out the old tables
+$db->exec("SET FOREIGN_KEY_CHECKS = 0");
+$db->exec("DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres");
+$db->exec("SET FOREIGN_KEY_CHECKS = 1");
+>>>>>>> main
 
-if ($conn->query($sql) === TRUE) {
-    echo "✅ Database created or already exists<br>";
-} else {
-    die("❌ Error creating database: " . $conn->error);
-}
+// 2. Create the tables (Now INCLUDING language and rating_imdb)
+$db->exec("
+    CREATE TABLE Genres (
+        genre_id INT PRIMARY KEY AUTO_INCREMENT,
+        genre_name VARCHAR(50) NOT NULL UNIQUE
+    )
+");
 
-// Now connect to that DB
-$conn->select_db($db);
-?>
-<?php
+$db->exec("
+    CREATE TABLE Directors (
+        director_id INT PRIMARY KEY AUTO_INCREMENT,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50)
+    )
+");
 
+$db->exec("
+    CREATE TABLE Actors (
+        actor_id INT PRIMARY KEY AUTO_INCREMENT,
+        first_name VARCHAR(50) NOT NULL,
+        last_name VARCHAR(50)
+    )
+");
 
-$host = "localhost";
-$user = "roott";
-$pass = "";
-$db = "cinematic_lens_db";
+$db->exec("
+    CREATE TABLE Movies (
+        movie_id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        release_year SMALLINT NOT NULL,
+        budget DECIMAL(15,2),
+        language VARCHAR(20),       /* ADDED COLUMN */
+        rating_imdb DECIMAL(3,1),   /* ADDED COLUMN */
+        director_id INT NOT NULL,
+        genre_id INT NOT NULL,
+        FOREIGN KEY (director_id) REFERENCES Directors(director_id),
+        FOREIGN KEY (genre_id) REFERENCES Genres(genre_id)
+    )
+");
 
-// Connect to MySQL
-#$conn = new mysqli($host, $user, $pass, $db);
-$conn = new mysqli($host, $user, $pass, $db, $port);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+$db->exec("
+    CREATE TABLE Movie_Actors (
+        movie_id INT NOT NULL,
+        actor_id INT NOT NULL,
+        PRIMARY KEY (movie_id, actor_id),
+        FOREIGN KEY (movie_id) REFERENCES Movies(movie_id) ON DELETE CASCADE,
+        FOREIGN KEY (actor_id) REFERENCES Actors(actor_id) ON DELETE CASCADE
+    )
+");
 
-// CSV file path
-$file = "./data/add_revenue.csv";
+// 3. Prepare SQL Statements
+$stmtGenre = $db->prepare("INSERT IGNORE INTO Genres (genre_name) VALUES (?)");
+$stmtGetGenre = $db->prepare("SELECT genre_id FROM Genres WHERE genre_name = ?");
 
-if (($handle = fopen($file, "r")) !== FALSE) {
+$stmtDir = $db->prepare("INSERT INTO Directors (first_name, last_name) VALUES (?, ?)");
+$stmtGetDir = $db->prepare("SELECT director_id FROM Directors WHERE first_name = ? AND last_name = ?");
 
-    // Read first row (column names)
-    $columns = fgetcsv($handle);
+$stmtActor = $db->prepare("INSERT INTO Actors (first_name, last_name) VALUES (?, ?)");
+$stmtGetActor = $db->prepare("SELECT actor_id FROM Actors WHERE first_name = ? AND last_name = ?");
 
-    // Create table dynamically
-    $table = "movies";
+// Updated to insert language and rating
+$stmtMovie = $db->prepare("INSERT INTO Movies (title, release_year, budget, language, rating_imdb, director_id, genre_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$stmtMovieActor = $db->prepare("INSERT IGNORE INTO Movie_Actors (movie_id, actor_id) VALUES (?, ?)");
 
-    $col_sql = "";
-    $primaryKey = "";
+// 4. Read the CSV and populate
+$file = fopen('./data/add_revenue.csv', 'r');
+if ($file !== false) {
+    fgetcsv($file); // Skip the header row
 
-    foreach ($columns as $index => $col) {
-        $col = preg_replace('/[^a-zA-Z0-9_]/', '_', $col);
+    $db->beginTransaction();
 
-        // Define types
-        switch ($col) {
-            case 'tmdb_id':
-                $type = "BIGINT";
-                break;
-            case 'imdb_id':
-                $type = "VARCHAR(20)";
-                break;
-            case 'release_date':
-                $type = "DATE";
-                break;
-            case 'rating_tmdb':
-            case 'rating_imdb':
-                $type = "FLOAT";
-                break;
-            case 'votes_imdb':
-            case 'runtimeMinutes':
-                $type = "INT";
-                break;
-            case 'revenue':
-                $type = "BIGINT";
-                break;
-            case 'language':
-            case 'genres':
-                $type = "VARCHAR(255)";
-                break;
-            case 'director':
-                $type = "VARCHAR(255)";
-                break;
-            default:
-                $type = "TEXT";
+    while (($data = fgetcsv($file)) !== false) {
+        $title = $data[2];
+        $release_date = $data[3];
+        $language = $data[4];         // Extracting language
+        $rating_imdb = $data[6];      // Extracting rating
+        $revenue = $data[8];
+        $director_full = $data[9];
+        $cast_full = $data[10];
+        $genre_name = $data[11];
+
+        $release_year = (int)substr($release_date, 0, 4);
+
+        // Process Genre
+        $stmtGenre->execute([$genre_name]);
+        $stmtGetGenre->execute([$genre_name]);
+        $genre_id = $stmtGetGenre->fetchColumn();
+
+        // Process Director
+        $dir_parts = explode(' ', trim($director_full), 2);
+        $dir_first = $dir_parts[0];
+        $dir_last = isset($dir_parts[1]) ? $dir_parts[1] : '';
+
+        $stmtGetDir->execute([$dir_first, $dir_last]);
+        $director_id = $stmtGetDir->fetchColumn();
+        if (!$director_id) {
+            $stmtDir->execute([$dir_first, $dir_last]);
+            $director_id = $db->lastInsertId();
         }
 
-        if ($index == 0) {
-            $col_sql .= "`$col` $type,";
-            $primaryKey = "PRIMARY KEY (`$col`)";
-        } else {
-            $col_sql .= "`$col` $type,";
+        // Process Movie (Now with language and rating!)
+        $stmtMovie->execute([$title, $release_year, $revenue, $language, $rating_imdb, $director_id, $genre_id]);
+        $movie_id = $db->lastInsertId();
+
+        // Process Actors
+        $actors = explode(',', $cast_full);
+        foreach ($actors as $actor) {
+            $actor = trim($actor);
+            if (empty($actor)) continue;
+
+            $act_parts = explode(' ', $actor, 2);
+            $act_first = $act_parts[0];
+            $act_last = isset($act_parts[1]) ? $act_parts[1] : '';
+
+            $stmtGetActor->execute([$act_first, $act_last]);
+            $actor_id = $stmtGetActor->fetchColumn();
+            
+            if (!$actor_id) {
+                $stmtActor->execute([$act_first, $act_last]);
+                $actor_id = $db->lastInsertId();
+            }
+
+            $stmtMovieActor->execute([$movie_id, $actor_id]);
         }
     }
 
-    $col_sql .= $primaryKey;
-
-    
-    $createTable = "CREATE TABLE IF NOT EXISTS $table ($col_sql)";
-
-    if (!$conn->query($createTable)) {
-        die("❌ Table creation failed: " . $conn->error);
-    }
-
-    // Insert data
-    while (($row = fgetcsv($handle)) !== FALSE) {
-
-        $values = array_map(function ($val) use ($conn) {
-            return "'" . $conn->real_escape_string($val) . "'";
-        }, $row);
-
-        $values = implode(",", $values);
-
-        $insert = "INSERT IGNORE INTO $table VALUES ($values)";
-        $conn->query($insert);
-    }
-
-    fclose($handle);
-    echo "✅ Table created and data inserted successfully!";
+    $db->commit();
+    fclose($file);
+    echo "<h2 style='color:green;'>✅ Database recreated and populated with missing columns!</h2>";
 } else {
-    echo "❌ Failed to open CSV file.";
+    echo "Failed to open add_revenue.csv.";
 }
-
-$conn->close();
-
 ?>

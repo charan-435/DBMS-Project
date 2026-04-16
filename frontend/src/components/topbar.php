@@ -1,14 +1,23 @@
 <div class="topbar">
   <div class="topbar-brand">THE CINEMATIC LENS</div>
   <div class="topbar-center">
-    <div class="search-bar">
-      <span class="search-icon">&#x1F50D;</span>
-      <input type="text" placeholder="Search films, directors...">
-    </div>
-  </div>
-  <div class="topbar-right">
-    <div class="topbar-icon">&#x1F514;</div>
-    <div class="topbar-icon">&#x2699;</div>
-    <div class="avatar">C</div>
+    
+    <form action="search.php" method="GET" style="display: flex; width: 100%; margin: 0;">
+      <div class="search-bar" style="width: 100%;">
+        <span class="search-icon">&#x1F50D;</span>
+        
+        <input 
+            type="text" 
+            name="q" 
+            placeholder="Search films, directors..." 
+            value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"
+            required
+            style="width: 100%; border: none; outline: none; background: transparent; color: inherit;"
+        >
+        
+        <button type="submit" style="display: none;"></button>
+      </div>
+    </form>
+    
   </div>
 </div>

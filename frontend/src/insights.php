@@ -81,6 +81,25 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
     .mini-table th { text-align: left; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
     .mini-table td { padding: 0.5rem 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border-color); }
     .mini-table tr:last-child td { border-bottom: none; }
+
+    /* Layout & Mask Fix */
+    .insights-grid { 
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 1.5rem; 
+        margin-bottom: 2rem;
+    }
+    .page-content::before, .page-content::after, 
+    .main-content::before, .main-content::after { 
+        display: none !important; 
+    }
+    .page-content { mask-image: none !important; -webkit-mask-image: none !important; }
+
+    /* Card Consistency */
+    .insight-card .a-content { 
+        background: rgba(15, 17, 23, 0.6) !important;
+        backdrop-filter: blur(8px);
+    }
   </style>
 </head>
 <body>
@@ -99,7 +118,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </p>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+      <div class="insights-grid">
         
         <!-- Q1 -->
         <div class="card insight-card">
@@ -191,7 +210,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </div>
 
         <!-- Q7 -->
-        <div class="card insight-card" style="grid-column: span 1;">
+        <div class="card insight-card">
           <div class="q-number">INSIGHT #7</div>
           <div class="q-title">Prolific Performers</div>
           <div class="q-desc">Which actors have appeared in the most films across the entire dataset?</div>
@@ -240,7 +259,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </div>
 
         <!-- Q2 -->
-        <div class="card insight-card" style="grid-column: span 3;">
+        <div class="card insight-card" style="grid-column: span 2;">
           <div class="q-number">INSIGHT #10</div>
           <div class="q-title">Genre Trends Over Time</div>
           <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
@@ -272,8 +291,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
-    </div>
+      
   </main>
 </body>
 </html>
