@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/components/session.php';
 require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 
@@ -84,7 +85,7 @@ $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'T
             <div class="flex-row">
               <span class="font-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($stat['primary_genre']) ?></span>
               <span class="font-bold <?= $index === 0 ? 'text-accent' : 'text-secondary' ?>" style="font-size: 0.85rem;">
-                &#x20B9;<?= number_format($stat['total_revenue'] / 10000000, 0) ?> Cr
+                &#x20B9;<?= formatRevenue($stat['total_revenue']) ?>
               </span>
             </div>
             <div class="region-bar-track"><div class="region-bar-fill" style="width: <?= $width ?>%; background-color: <?= $color ?>;"></div></div>
@@ -160,7 +161,7 @@ $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'T
                 </td>
                 <td><?= htmlspecialchars($movie['director']) ?></td>
                 <td><span class="genre-badge <?= $genreClass ?>"><?= htmlspecialchars(strtoupper($primaryGenre)) ?></span></td>
-                <td class="font-bold">&#x20B9;<?= number_format($movie['revenue'] / 10000000, 1) ?> Cr</td>
+                <td class="font-bold">&#x20B9;<?= formatRevenue($movie['revenue']) ?></td>
                 <td>
                   <div class="imdb-score">
                     <span class="imdb-star">&#x2605;</span>

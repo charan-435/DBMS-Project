@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/components/session.php';
 require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 

@@ -28,5 +28,14 @@
     <a href="manage.php" class="nav-item <?= ($currentPage == 'manage.php') ? 'active' : '' ?>">
        Manage Records
     </a>
+    <?php if (isset($_SESSION['user_name'])): ?>
+      <div style="padding: 1rem 0.75rem 0.5rem; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 0.5rem;">
+        LOGGED IN AS:<br>
+        <strong style="color: var(--accent-primary);"><?= strtoupper(htmlspecialchars($_SESSION['user_name'])) ?></strong>
+      </div>
+    <?php endif; ?>
+    <a href="logout.php" class="nav-item" style="color: #ef4444;">
+       Logout
+    </a>
   </div>
 </aside>
