@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../backend/DataService.php';
+require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 
@@ -16,8 +17,8 @@ $duos = $service->getActorDirectorCollaborations(3);
 // Q4: Language Champions
 $langChamps = $service->getLanguageRevenueAverages(3);
 
-// Q5: Runtime Sweet Spot
-$runtimeStats = $service->getRuntimeVsRating();
+// Q5: Runtime — removed (column does not exist in schema)
+$runtimeStats = [];
 
 // Q6: 100 Crore Club
 $highGrossing = $service->getHighGrossingGenres(3);
@@ -34,29 +35,7 @@ $qualVCom = $service->getRatingRevenueCorrelation();
 
 // Q10: Golden Year
 $goldenYear = $service->getGoldenYear();
-
-// Safe defaults for UI if database is empty
-if (empty($duos)) {
-    $duos = [
-        ['director' => 'Director A', 'actor' => 'Actor B', 'count' => 5, 'avg_revenue' => 2000000000],
-        ['director' => 'Director C', 'actor' => 'Actor D', 'count' => 4, 'avg_revenue' => 1500000000]
-    ];
-}
-if (empty($goldenYear)) {
-    $goldenYear = ['yr' => 2023, 'total_revenue' => 12000000000, 'movie_count' => 45];
-}
-if (empty($qualVCom)) {
-    $qualVCom = [
-        ['rating_category' => 'Masterpiece (>= 8.0)', 'avg_revenue' => 5000000000],
-        ['rating_category' => 'Flop (< 5.0)', 'avg_revenue' => 100000000]
-    ];
-}
-if (empty($runtimeStats)) {
-    $runtimeStats = [
-        ['runtime_category' => '90 - 120 mins', 'avg_rating' => 6.5],
-        ['runtime_category' => '> 150 mins', 'avg_rating' => 7.8]
-    ];
-}
+if (empty($goldenYear)) $goldenYear = ['yr' => '—', 'total_revenue' => 0, 'movie_count' => 0];
 
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296'];
 ?>
@@ -111,7 +90,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     <div class="page-content">
       <div class="insight-header" style="margin-bottom: 2rem;">
-        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">10 BIG QUESTIONS ANSWERED</p>
+        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">9 BIG QUESTIONS ANSWERED</p>
         <h1 style="font-size: 2.25rem; font-weight: 800;">Interactive <em style="color: var(--accent-primary); font-style: italic;">Insights</em></h1>
         <p class="mt-4" style="color: var(--text-secondary); font-size: 0.9rem; max-width: 600px;">
           Explore deep, data-driven answers to the industry's most exciting questions, calculated live from the metadata of over two decades of Indian cinema.
@@ -143,7 +122,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               <tr>
                 <td style="font-weight: 600;"><?= htmlspecialchars($duo['director']) ?><br><span style="color:var(--text-secondary); font-size: 0.75rem;">& <?= htmlspecialchars($duo['actor']) ?></span></td>
                 <td><?= $duo['count'] ?></td>
-                <td>&#x20B9;<?= number_format($duo['avg_revenue'] / 10000000, 1) ?>Cr</td>
+                <td>&#x20B9;<?= number_format($duo['avg_revenue'] / 100000, 1) ?>Cr</td>
               </tr>
               <?php endforeach; ?>
             </table>
@@ -157,7 +136,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="q-desc">Which specific year saw the highest total combined box office revenue in cinema history?</div>
           <div class="a-content">
             <div class="big-stat"><?= $goldenYear['yr'] ?></div>
-            <div class="big-stat-sub">&#x20B9;<?= number_format($goldenYear['total_revenue'] / 10000000, 0) ?> Cr Total Across <?= $goldenYear['movie_count'] ?> Films</div>
+            <div class="big-stat-sub">&#x20B9;<?= number_format($goldenYear['total_revenue'] / 100000, 0) ?> Cr Total Across <?= $goldenYear['movie_count'] ?> Films</div>
           </div>
         </div>
 
@@ -225,27 +204,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           </div>
         </div>
 
-        <!-- Q5 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #8</div>
-          <div class="q-title">Runtime Sweet Spot</div>
-          <div class="q-desc">How does a movie's runtime affect its average IMDb rating?</div>
-          <div class="a-content">
-             <table class="mini-table">
-               <tr><th>Runtime</th><th>Avg Score</th></tr>
-               <?php foreach ($runtimeStats as $rt): ?>
-               <tr>
-                 <td class="font-bold text-sm"><?= $rt['runtime_category'] ?></td>
-                 <td style="color: var(--accent-blue); font-weight: 700;">&#x2605; <?= number_format($rt['avg_rating'], 2) ?></td>
-               </tr>
-               <?php endforeach; ?>
-             </table>
-          </div>
-        </div>
 
         <!-- Q6 -->
         <div class="card insight-card">
-          <div class="q-number">INSIGHT #9</div>
+          <div class="q-number">INSIGHT #8</div>
           <div class="q-title">The 100-Crore Club</div>
           <div class="q-desc">Which genres are statistically most likely to produce movies grossing > ₹100 Cr?</div>
           <div class="a-content">
@@ -260,7 +222,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
         <!-- Q2 -->
         <div class="card insight-card" style="grid-column: span 2;">
-          <div class="q-number">INSIGHT #10</div>
+          <div class="q-number">INSIGHT #9</div>
           <div class="q-title">Genre Trends Over Time</div>
           <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
           
