@@ -2,22 +2,11 @@
   <div class="topbar-brand">THE CINEMATIC LENS</div>
   <div class="topbar-center">
     
-    <form action="search.php" method="GET" style="display: flex; width: 100%; margin: 0;">
-      <div class="search-bar" style="width: 100%;">
-        <span class="search-icon">&#x1F50D;</span>
-        
-        <input 
-            type="text" 
-            name="q" 
-            placeholder="Search films, directors..." 
-            value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"
-            required
-            style="width: 100%; border: none; outline: none; background: transparent; color: inherit;"
-        >
-        
-        <button type="submit" style="display: none;"></button>
-      </div>
-    </form>
+    <div style="display: flex; width: 100%; align-items: center;">
+      <a href="search.php" class="btn-outline" style="color: var(--text-muted); border-color: var(--border-color);">
+        <span style="font-size: 0.85rem; margin-right: 0.3rem;"></span> Filter / Advanced Search
+      </a>
+    </div>
     
   </div>
 </div>

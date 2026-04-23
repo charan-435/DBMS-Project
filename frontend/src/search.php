@@ -18,11 +18,11 @@ $sortBy = trim($_GET['sort'] ?? 'rating');
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
 
-// Dropdown data
+
 $allGenres = $service->getAllGenres();
 $allLangs  = $service->getDistinctLanguages();
 
-// Only search if we have at least one filter
+
 $hasFilter = !empty($searchQuery) || !empty($filterGenre) || !empty($filterLang) || !empty($filterMinYear) || !empty($filterMaxYear) || !empty($filterMinRating);
 
 $results = [];
@@ -36,17 +36,17 @@ if ($hasFilter) {
     $totalPages = ceil($total / $perPage);
 }
 
-// Also load single-movie detail view if exactly one result and query is specific
+
 $singleMovie = null;
 $cast = [];
 $industryAvgRating = 0;
 $industryAvgBudget = 1;
 
 if (!empty($searchQuery) && !$hasFilter) {
-    // Legacy behavior — single movie lookup
+
 }
 
-// Build current query string for pagination links
+
 function paginationUrl($page) {
     $params = $_GET;
     $params['page'] = $page;
@@ -126,7 +126,7 @@ function paginationUrl($page) {
         <h1 style="font-size: 2rem; font-weight: 800;">Search <em style="color: var(--accent-primary); font-style: italic;">Films</em></h1>
       </div>
 
-      <!-- Filter Bar -->
+     
       <form action="search.php" method="GET" class="filter-bar">
         <div class="filter-row">
           <div class="filter-group" style="flex: 2;">
@@ -187,7 +187,7 @@ function paginationUrl($page) {
         </div>
       </form>
 
-      <!-- Results -->
+
       <?php if ($hasFilter): ?>
 
         <div class="results-header">

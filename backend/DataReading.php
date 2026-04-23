@@ -13,7 +13,6 @@ try {
     $db->exec("TRUNCATE TABLE Actors");
     $db->exec("TRUNCATE TABLE Directors");
     $db->exec("TRUNCATE TABLE Genres");
-    $db->exec("TRUNCATE TABLE Genre_Statistics");
 } catch (PDOException $e) {
     die("<h3>Database Error: Tables are missing!</h3>
          <p>You need to import the new schema first.</p>
