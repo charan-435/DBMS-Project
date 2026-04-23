@@ -16,7 +16,7 @@
     <a href="insights.php" class="nav-item <?= ($currentPage == 'insights.php') ? 'active' : '' ?>">
       <span class="nav-icon">&#x1F4A1;</span> Interactive Insights
     </a>
-    <a href="#" class="nav-item">
+    <a href="collaborators.php" class="nav-item <?= ($currentPage == 'collaborators.php') ? 'active' : '' ?>">
       <span class="nav-icon">&#x2699;</span> Collaborations
     </a>
     <a href="#" class="nav-item">
