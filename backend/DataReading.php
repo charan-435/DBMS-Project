@@ -4,59 +4,28 @@ require_once 'Database.php';
 
 $db = Database::getConnection();
 
-// 1. Clear out the old tables
+// 1. Clear out old data but KEEP the schema, views, and triggers intact
 $db->exec("SET FOREIGN_KEY_CHECKS = 0");
-$db->exec("DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres");
+
+try {
+    $db->exec("TRUNCATE TABLE Movie_Actors");
+    $db->exec("TRUNCATE TABLE Movies");
+    $db->exec("TRUNCATE TABLE Actors");
+    $db->exec("TRUNCATE TABLE Directors");
+    $db->exec("TRUNCATE TABLE Genres");
+    $db->exec("TRUNCATE TABLE Genre_Statistics");
+} catch (PDOException $e) {
+    die("<h3>Database Error: Tables are missing!</h3>
+         <p>You need to import the new schema first.</p>
+         <p>Please open <a href='http://localhost/phpmyadmin'>phpMyAdmin</a>, select the <b>cinematic_lens_db</b> database, and import <b>backend/DB_Schema.sql</b>.</p>
+         <p>After importing, come back here and refresh.</p>");
+}
+
 $db->exec("SET FOREIGN_KEY_CHECKS = 1");
 
-// 2. Create the tables (Now INCLUDING language and rating_imdb)
-$db->exec("
-    CREATE TABLE Genres (
-        genre_id INT PRIMARY KEY AUTO_INCREMENT,
-        genre_name VARCHAR(50) NOT NULL UNIQUE
-    )
-");
+// The table structures, views, and procedures are now managed by DB_Schema.sql.
+// We no longer DROP and CREATE tables here to prevent schema drift.
 
-$db->exec("
-    CREATE TABLE Directors (
-        director_id INT PRIMARY KEY AUTO_INCREMENT,
-        first_name VARCHAR(50) NOT NULL,
-        last_name VARCHAR(50)
-    )
-");
-
-$db->exec("
-    CREATE TABLE Actors (
-        actor_id INT PRIMARY KEY AUTO_INCREMENT,
-        first_name VARCHAR(50) NOT NULL,
-        last_name VARCHAR(50)
-    )
-");
-
-$db->exec("
-    CREATE TABLE Movies (
-        movie_id INT PRIMARY KEY AUTO_INCREMENT,
-        title VARCHAR(255) NOT NULL,
-        release_year SMALLINT NOT NULL,
-        budget DECIMAL(15,2),
-        language VARCHAR(20),       /* ADDED COLUMN */
-        rating_imdb DECIMAL(3,1),   /* ADDED COLUMN */
-        director_id INT NOT NULL,
-        genre_id INT NOT NULL,
-        FOREIGN KEY (director_id) REFERENCES Directors(director_id),
-        FOREIGN KEY (genre_id) REFERENCES Genres(genre_id)
-    )
-");
-
-$db->exec("
-    CREATE TABLE Movie_Actors (
-        movie_id INT NOT NULL,
-        actor_id INT NOT NULL,
-        PRIMARY KEY (movie_id, actor_id),
-        FOREIGN KEY (movie_id) REFERENCES Movies(movie_id) ON DELETE CASCADE,
-        FOREIGN KEY (actor_id) REFERENCES Actors(actor_id) ON DELETE CASCADE
-    )
-");
 
 // 3. Prepare SQL Statements
 $stmtGenre = $db->prepare("INSERT IGNORE INTO Genres (genre_name) VALUES (?)");
@@ -69,11 +38,14 @@ $stmtActor = $db->prepare("INSERT INTO Actors (first_name, last_name) VALUES (?,
 $stmtGetActor = $db->prepare("SELECT actor_id FROM Actors WHERE first_name = ? AND last_name = ?");
 
 // Updated to insert language and rating
-$stmtMovie = $db->prepare("INSERT INTO Movies (title, release_year, budget, language, rating_imdb, director_id, genre_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+$stmtMovie = $db->prepare("
+    INSERT INTO Movies (title, release_year, revenue, language, rating_imdb, director_id, genre_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+");
 $stmtMovieActor = $db->prepare("INSERT IGNORE INTO Movie_Actors (movie_id, actor_id) VALUES (?, ?)");
 
 // 4. Read the CSV and populate
-$file = fopen('./data/add_revenue.csv', 'r');
+$file = fopen(__DIR__ . "/data/add_revenue.csv", "r");
 if ($file !== false) {
     fgetcsv($file); // Skip the header row
 
