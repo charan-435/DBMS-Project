@@ -5,28 +5,28 @@
   
   <nav class="sidebar-nav">
     <a href="dashboard.php" class="nav-item <?= ($currentPage == 'dashboard.php') ? 'active' : '' ?>">
-      &#x1F4CA; Dashboard
+      Dashboard
     </a>
     <a href="index.php" class="nav-item <?= ($currentPage == 'index.php') ? 'active' : '' ?>">
-      &#x1F3AC; Directors
+      Directors
     </a>
     <a href="genres.php" class="nav-item <?= ($currentPage == 'genres.php') ? 'active' : '' ?>">
-      &#x1F3AD; Genres
+      Genres
     </a>
     <a href="insights.php" class="nav-item <?= ($currentPage == 'insights.php') ? 'active' : '' ?>">
-      &#x1F4A1; Insights
+       Insights
     </a>
     <a href="collaborations.php" class="nav-item <?= ($currentPage == 'collaborations.php') ? 'active' : '' ?>">
-      &#x1F91D; Collaborations
+      Collaborations
     </a>
     <a href="industry.php" class="nav-item <?= ($currentPage == 'industry.php') ? 'active' : '' ?>">
-      &#x1F30D; Regional Stats
+     Regional Stats
     </a>
   </nav>
 
   <div class="sidebar-bottom">
     <a href="manage.php" class="nav-item <?= ($currentPage == 'manage.php') ? 'active' : '' ?>">
-      &#x2699; Manage Records
+       Manage Records
     </a>
   </div>
 </aside>

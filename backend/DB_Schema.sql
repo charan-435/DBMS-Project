@@ -1,6 +1,6 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres, Genre_Statistics;
+DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres;
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE Genres (
@@ -42,15 +42,7 @@ CREATE TABLE Movie_Actors (
     FOREIGN KEY (actor_id) REFERENCES Actors(actor_id) ON DELETE CASCADE
 );
 
--- Summary table maintained by trigger
-CREATE TABLE Genre_Statistics (
-    genre_id      INT PRIMARY KEY,
-    movie_count   INT DEFAULT 0,
-    avg_rating    DECIMAL(4,2) DEFAULT 0,
-    total_revenue DECIMAL(18,2) DEFAULT 0,
-    last_updated  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (genre_id) REFERENCES Genres(genre_id) ON DELETE CASCADE
-);
+-- Summary table removed to rely on DQL (Views/Queries instead)
 
 
 -- ────────────────────────────────────────────────────────────
@@ -176,78 +168,5 @@ BEGIN
 END //
 
 
--- ────────────────────────────────────────────────────────────
--- 4. FUNCTIONS
--- ────────────────────────────────────────────────────────────
-
--- Classify a movie's rating into a tier label
-CREATE FUNCTION GetRatingTier(p_rating DECIMAL(3,1))
-RETURNS VARCHAR(30)
-BEGIN
-    IF p_rating >= 8.0 THEN RETURN 'Masterpiece';
-    ELSEIF p_rating >= 6.5 THEN RETURN 'Above Average';
-    ELSEIF p_rating >= 5.0 THEN RETURN 'Average';
-    ELSEIF p_rating > 0 THEN RETURN 'Below Average';
-    ELSE RETURN 'Unrated';
-    END IF;
-END //
-
--- Format revenue into Crores
-CREATE FUNCTION FormatRevenueCr(p_revenue DECIMAL(15,2))
-RETURNS VARCHAR(30)
-BEGIN
-    RETURN CONCAT(ROUND(p_revenue / 10000000, 2), ' Cr');
-END //
-
-
--- ────────────────────────────────────────────────────────────
--- 5. TRIGGERS
--- ────────────────────────────────────────────────────────────
-
--- Update stats after inserting a movie
-CREATE TRIGGER trg_after_movie_insert
-AFTER INSERT ON Movies
-FOR EACH ROW
-BEGIN
-    REPLACE INTO Genre_Statistics (genre_id, movie_count, avg_rating, total_revenue)
-    SELECT genre_id, COUNT(*), AVG(rating_imdb), SUM(revenue)
-    FROM Movies
-    WHERE genre_id = NEW.genre_id
-    GROUP BY genre_id;
-END //
-
--- Update stats after deleting a movie
-CREATE TRIGGER trg_after_movie_delete
-AFTER DELETE ON Movies
-FOR EACH ROW
-BEGIN
-    REPLACE INTO Genre_Statistics (genre_id, movie_count, avg_rating, total_revenue)
-    SELECT genre_id, COUNT(*), AVG(rating_imdb), SUM(revenue)
-    FROM Movies
-    WHERE genre_id = OLD.genre_id
-    GROUP BY genre_id;
-END //
-
--- Update stats after updating a movie
-CREATE TRIGGER trg_after_movie_update
-AFTER UPDATE ON Movies
-FOR EACH ROW
-BEGIN
-    -- Update stats for old genre
-    REPLACE INTO Genre_Statistics (genre_id, movie_count, avg_rating, total_revenue)
-    SELECT genre_id, COUNT(*), AVG(rating_imdb), SUM(revenue)
-    FROM Movies
-    WHERE genre_id = OLD.genre_id
-    GROUP BY genre_id;
-    
-    -- Update stats for new genre (if changed)
-    IF OLD.genre_id <> NEW.genre_id THEN
-        REPLACE INTO Genre_Statistics (genre_id, movie_count, avg_rating, total_revenue)
-        SELECT genre_id, COUNT(*), AVG(rating_imdb), SUM(revenue)
-        FROM Movies
-        WHERE genre_id = NEW.genre_id
-        GROUP BY genre_id;
-    END IF;
-END //
-
-DELIMITER ;
+-- No Functions or Triggers explicitly requested by syllabus constraints.
+-- Advanced logic is handled via Views or direct queries (DQL).
