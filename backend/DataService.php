@@ -558,5 +558,33 @@ class DataService {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) { return []; }
     }
+    // ── AUTHENTICATION ─────────────────────────────────────────
+    
+    public function signup($name, $userId, $password) {
+        if (!$this->conn) return false;
+        try {
+            $hashed = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $this->conn->prepare("INSERT INTO Users (full_name, user_id, password) VALUES (:name, :uid, :pwd)");
+            return $stmt->execute([
+                'name' => $name,
+                'uid' => $userId,
+                'pwd' => $hashed
+            ]);
+        } catch(PDOException $e) { return false; }
+    }
+
+    public function login($userId, $password) {
+        if (!$this->conn) return null;
+        try {
+            $stmt = $this->conn->prepare("SELECT * FROM Users WHERE user_id = :uid");
+            $stmt->execute(['uid' => $userId]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user && password_verify($password, $user['password'])) {
+                return $user;
+            }
+            return null;
+        } catch(PDOException $e) { return null; }
+    }
 }
 ?>

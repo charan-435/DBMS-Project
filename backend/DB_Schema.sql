@@ -168,5 +168,14 @@ BEGIN
 END //
 
 
+-- Users Table for Authentication
+CREATE TABLE IF NOT EXISTS Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    user_id VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- No Functions or Triggers explicitly requested by syllabus constraints.
 -- Advanced logic is handled via Views or direct queries (DQL).

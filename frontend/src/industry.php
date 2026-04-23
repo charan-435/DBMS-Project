@@ -1,8 +1,10 @@
 <?php
+require_once __DIR__ . '/components/session.php';
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../backend/DataService.php';
+require_once __DIR__ . '/components/utils.php';
 
 $ds = new DataService();
 
@@ -46,7 +48,7 @@ if ($othersTotal > 0) {
         'color' => '#6b7280',
     ];
 }
-$market_total = '₹' . number_format($grandTotal / 10_000_000, 0) . ' Cr';
+$market_total = '₹' . formatRevenue($grandTotal);
 
 // ── 3. Genre Trend (Action vs Romance yearly count) ───────────────────────────
 $genreTrend  = $ds->getGenreTrend();
@@ -342,7 +344,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
         <div class="kpi">
             <div class="kpi-icon">💰</div>
             <div class="kpi-label">Total Revenue</div>
-            <div class="kpi-value">₹<?= number_format($totalRevenue / 10_000_000, 0) ?> Cr</div>
+            <div class="kpi-value">₹<?= formatRevenue($totalRevenue) ?></div>
             <div class="kpi-sub">cumulative box office</div>
         </div>
         <div class="kpi">
@@ -487,7 +489,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                 $emojis = ['🎬','🎭','⚡','🏺','🗡️'];
                 foreach ($top_films as $idx => $f):
                     $rev = (isset($f['revenue']) && $f['revenue'] > 0)
-                        ? '₹' . number_format($f['revenue'] / 10_000_000, 0) . ' Cr'
+                        ? '₹' . formatRevenue($f['revenue'])
                         : '—';
                     $rating = (isset($f['rating_imdb']) && $f['rating_imdb'] > 0)
                         ? number_format((float)$f['rating_imdb'], 1)
@@ -559,7 +561,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                 <div class="corr-list">
                 <?php foreach ($ratingRevenue as $rc):
                     $barPct  = $maxRev > 0 ? round(($rc['avg_revenue'] / $maxRev) * 100) : 0;
-                    $revLbl  = '₹' . number_format($rc['avg_revenue'] / 10_000_000, 1) . ' Cr';
+                    $revLbl  = '₹' . formatRevenue($rc['avg_revenue']);
                 ?>
                 <div>
                     <div class="corr-meta">

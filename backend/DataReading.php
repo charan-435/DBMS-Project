@@ -13,6 +13,7 @@ try {
     $db->exec("TRUNCATE TABLE Actors");
     $db->exec("TRUNCATE TABLE Directors");
     $db->exec("TRUNCATE TABLE Genres");
+    $db->exec("TRUNCATE TABLE Users");
 } catch (PDOException $e) {
     die("<h3>Database Error: Tables are missing!</h3>
          <p>You need to import the new schema first.</p>
@@ -107,7 +108,14 @@ if ($file !== false) {
 
     $db->commit();
     fclose($file);
-    echo "<h2 style='color:green;'>✅ Database recreated and populated with missing columns!</h2>";
+
+    // Populate Default User
+    $adminPwd = password_hash('password', PASSWORD_DEFAULT);
+    $db->prepare("INSERT INTO Users (full_name, user_id, password) VALUES ('Administrator', 'admin', ?)")
+       ->execute([$adminPwd]);
+
+    echo "<h2 style='color:green;'>✅ Database recreated and populated!</h2>";
+    echo "<p>Default User: <strong>admin</strong> | Password: <strong>password</strong></p>";
 } else {
     echo "Failed to open add_revenue.csv.";
 }

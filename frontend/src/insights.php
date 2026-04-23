@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/components/session.php';
 require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 
@@ -36,6 +37,12 @@ $qualVCom = $service->getRatingRevenueCorrelation();
 // Q10: Golden Year
 $goldenYear = $service->getGoldenYear();
 if (empty($goldenYear)) $goldenYear = ['yr' => '—', 'total_revenue' => 0, 'movie_count' => 0];
+
+// Q11: Versatile Actors (Top actors in most genres)
+$versatileActors = $service->getActorGenreVersatility(5);
+
+// Q12: Frequent Collaborators (Actor-Actor duos)
+$actorDuos = $service->getRepeatCollaborators(3, 5);
 
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296'];
 ?>
@@ -90,7 +97,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     <div class="page-content">
       <div class="insight-header" style="margin-bottom: 2rem;">
-        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">9 BIG QUESTIONS ANSWERED</p>
+        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">11 BIG QUESTIONS ANSWERED</p>
         <h1 style="font-size: 2.25rem; font-weight: 800;">Interactive <em style="color: var(--accent-primary); font-style: italic;">Insights</em></h1>
         <p class="mt-4" style="color: var(--text-secondary); font-size: 0.9rem; max-width: 600px;">
           Explore deep, data-driven answers to the industry's most exciting questions, calculated live from the metadata of over two decades of Indian cinema.
@@ -122,7 +129,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               <tr>
                 <td style="font-weight: 600;"><?= htmlspecialchars($duo['director']) ?><br><span style="color:var(--text-secondary); font-size: 0.75rem;">& <?= htmlspecialchars($duo['actor']) ?></span></td>
                 <td><?= $duo['count'] ?></td>
-                <td>&#x20B9;<?= number_format($duo['avg_revenue'] / 100000, 1) ?>Cr</td>
+                <td>&#x20B9;<?= formatRevenue($duo['avg_revenue']) ?></td>
               </tr>
               <?php endforeach; ?>
             </table>
@@ -136,7 +143,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="q-desc">Which specific year saw the highest total combined box office revenue in cinema history?</div>
           <div class="a-content">
             <div class="big-stat"><?= $goldenYear['yr'] ?></div>
-            <div class="big-stat-sub">&#x20B9;<?= number_format($goldenYear['total_revenue'] / 100000, 0) ?> Cr Total Across <?= $goldenYear['movie_count'] ?> Films</div>
+            <div class="big-stat-sub">&#x20B9;<?= formatRevenue($goldenYear['total_revenue']) ?> Total Across <?= $goldenYear['movie_count'] ?> Films</div>
           </div>
         </div>
 
@@ -154,7 +161,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
              <div style="margin-bottom: 0.5rem;">
                <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.2rem;">
                  <span class="font-bold"><?= strtoupper($l['language']) ?></span>
-                 <span>&#x20B9;<?= number_format($l['avg_revenue'] / 10000000, 1) ?>Cr / film</span>
+                 <span>&#x20B9;<?= formatRevenue($l['avg_revenue']) ?> / film</span>
                </div>
                <div class="region-bar-track"><div class="region-bar-fill" style="width:<?= max($w, 5) ?>%; background:<?= $barColors[$idx%count($barColors)] ?>;"></div></div>
              </div>
@@ -171,7 +178,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             <?php foreach ($qualVCom as $q): ?>
               <div style="display:flex; justify-content:space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
                 <span style="font-size: 0.8rem; font-weight: 600;"><?= $q['rating_category'] ?></span>
-                <span class="text-accent font-bold" style="font-size: 0.85rem;">&#x20B9;<?= number_format($q['avg_revenue']/10000000, 1) ?>Cr</span>
+                <span class="text-accent font-bold" style="font-size: 0.85rem;">&#x20B9;<?= formatRevenue($q['avg_revenue']) ?></span>
               </div>
             <?php endforeach; ?>
           </div>
@@ -220,9 +227,46 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           </div>
         </div>
 
+        <!-- Q11: Versatile Actors -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #9</div>
+          <div class="q-title">Genre Versatility</div>
+          <div class="q-desc">Which actors have displayed the most range by working across diverse genres?</div>
+          <div class="a-content">
+            <table class="mini-table">
+              <tr><th>Actor</th><th style="text-align:right;">Genres</th></tr>
+              <?php foreach ($versatileActors as $va): ?>
+              <tr>
+                <td style="font-weight: 600;"><?= htmlspecialchars($va['actor']) ?></td>
+                <td style="text-align:right;"><span class="sentiment-badge sentiment-high"><?= $va['genres_count'] ?> Genres</span></td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
+          </div>
+        </div>
+
+        <!-- Q12: Frequent Collaborators -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #10</div>
+          <div class="q-title">Frequent Pairings</div>
+          <div class="q-desc">Which actor duos are the most frequent collaborators on screen?</div>
+          <div class="a-content">
+            <?php foreach ($actorDuos as $ad): ?>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color);">
+                <div style="font-size: 0.8rem;">
+                  <span style="font-weight:600;"><?= htmlspecialchars($ad['actor1']) ?></span>
+                  <span style="color:var(--text-muted); margin: 0 4px;">&</span>
+                  <span style="font-weight:600;"><?= htmlspecialchars($ad['actor2']) ?></span>
+                </div>
+                <span class="text-green font-bold" style="font-size: 0.8rem;"><?= $ad['films_together'] ?> Films</span>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
         <!-- Q2 -->
         <div class="card insight-card" style="grid-column: span 2;">
-          <div class="q-number">INSIGHT #9</div>
+          <div class="q-number">INSIGHT #11</div>
           <div class="q-title">Genre Trends Over Time</div>
           <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
           

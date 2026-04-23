@@ -133,7 +133,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               <div class="duo-stats">
                 <div class="duo-films"><?= $duo['count'] ?> films</div>
                 <?php if (isset($duo['avg_revenue'])): ?>
-                  <div class="duo-revenue">&#x20B9;<?= number_format($duo['avg_revenue'] / 10000000, 1) ?>Cr avg</div>
+                  <div class="duo-revenue">&#x20B9;<?= formatRevenue($duo['avg_revenue']) ?> avg</div>
                 <?php endif; ?>
               </div>
             </div>
