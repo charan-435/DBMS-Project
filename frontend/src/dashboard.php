@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../backend/DataService.php';
+require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 
@@ -15,43 +16,9 @@ $genreTrend = $service->getGenreTrend();
 // Trending Movies
 $trending = $service->getTrendingMovies(5);
 
-// Fallbacks
-if ($avgRating == 0) $avgRating = 7.42;
-if ($totalRevenue == 0) $totalRevenue = 124000000000;
-if ($mostActiveGenre['genre'] === 'Unknown') $mostActiveGenre = ['genre' => 'Action', 'count' => 342];
-if (empty($trending)) {
-    $trending = [
-        ['title' => 'Sample Film', 'director' => 'Director', 'genres' => 'Drama', 'rating_imdb' => 8.7, 'language' => 'hi', 'yr' => 2024, 'revenue' => 100000000],
-    ];
-}
-
-// Format revenue
-$revenueCr = round($totalRevenue / 10000000, 1); // In Crores
-if ($revenueCr > 1000) {
-    $revenueFormatted = round($revenueCr / 1000, 1) . 'K Cr';
-} else {
-    $revenueFormatted = number_format($revenueCr, 1) . ' Cr';
-}
-
-// Language map for display
-$langMap = ['hi' => 'Hindi', 'ta' => 'Tamil', 'te' => 'Telugu', 'ml' => 'Malayalam', 'kn' => 'Kannada', 'en' => 'English'];
-
-// Genre color mapping
-function getGenreClass($genre) {
-    $genre = strtolower(trim($genre));
-    $map = ['drama' => 'genre-drama', 'action' => 'genre-action', 'comedy' => 'genre-comedy',
-            'romance' => 'genre-romance', 'thriller' => 'genre-thriller', 'horror' => 'genre-horror',
-            'crime' => 'genre-crime'];
-    return $map[$genre] ?? 'genre-default';
-}
-
-// Sentiment labels based on rating
-function getSentiment($rating) {
-    if ($rating >= 8.5) return ['label' => 'Universal Praise', 'class' => 'sentiment-high'];
-    if ($rating >= 7.5) return ['label' => 'Box Office Smash', 'class' => 'sentiment-medium'];
-    if ($rating >= 7.0) return ['label' => 'Cult Status', 'class' => 'sentiment-low'];
-    return ['label' => 'Mixed Reviews', 'class' => 'sentiment-low'];
-}
+// Fallbacks — show real data or empty state
+if ($avgRating == 0) $avgRating = null;
+$revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue) : '—';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,7 +67,7 @@ function getSentiment($rating) {
             <span class="stat-card-label">TOTAL BOX OFFICE</span>
             <div class="stat-card-icon">&#x1F3AC;</div>
           </div>
-          <div class="stat-card-value">&#x20B9;<?= $revenueFormatted ?></div>
+          <div class="stat-card-value"><?= $revenueFormatted ?></div>
           <div class="stat-card-sub">&#x2191; Growth in OTT licensing</div>
         </div>
 

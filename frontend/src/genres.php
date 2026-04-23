@@ -1,21 +1,11 @@
 <?php
 require_once __DIR__ . '/../../backend/DataService.php';
+require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 $genreStats = $service->getGenreStats(6);
 $langStats = $service->getLanguageStats(5);
 $topGrossing = $service->getTopGrossingMovies(5);
-
-// Fallback
-if (empty($genreStats)) {
-    $genreStats = [
-        ['primary_genre' => 'Action', 'total_revenue' => 15000000000, 'movie_count' => 1500, 'avg_rating' => 5.8],
-        ['primary_genre' => 'Drama', 'total_revenue' => 9000000000, 'movie_count' => 1200, 'avg_rating' => 6.2],
-        ['primary_genre' => 'Comedy', 'total_revenue' => 9000000000, 'movie_count' => 1100, 'avg_rating' => 5.5],
-        ['primary_genre' => 'Romance', 'total_revenue' => 5000000000, 'movie_count' => 800, 'avg_rating' => 6.0],
-        ['primary_genre' => 'Crime', 'total_revenue' => 3000000000, 'movie_count' => 400, 'avg_rating' => 6.5],
-    ];
-}
 
 $topGenre = $genreStats[0] ?? ['primary_genre' => 'Unknown', 'movie_count' => 0, 'total_revenue' => 0, 'avg_rating' => 0];
 $runnerUp = $genreStats[1] ?? ['primary_genre' => 'Unknown', 'movie_count' => 0, 'total_revenue' => 0, 'avg_rating' => 0];
@@ -23,15 +13,6 @@ $totalMoviesSum = array_sum(array_column($genreStats, 'movie_count'));
 $topSharePercent = $totalMoviesSum > 0 ? round(($topGenre['movie_count'] / $totalMoviesSum) * 100) : 0;
 
 $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'Tollywood (Telugu)', 'ml' => 'Mollywood (Malayalam)', 'kn' => 'Sandalwood (Kannada)', 'en' => 'English'];
-$barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296'];
-
-function getGenreClass2($genre) {
-    $genre = strtolower(trim($genre));
-    $map = ['drama' => 'genre-drama', 'action' => 'genre-action', 'comedy' => 'genre-comedy',
-            'romance' => 'genre-romance', 'thriller' => 'genre-thriller', 'horror' => 'genre-horror',
-            'crime' => 'genre-crime'];
-    return $map[$genre] ?? 'genre-default';
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -164,7 +145,7 @@ function getGenreClass2($genre) {
             <?php if (!empty($topGrossing)): ?>
               <?php foreach ($topGrossing as $movie):
                 $primaryGenre = trim(explode(',', $movie['genres'] ?? 'Unknown')[0]);
-                $genreClass = getGenreClass2($primaryGenre);
+                $genreClass = getGenreClass($primaryGenre);
                 $langLabel = $langMap[$movie['language'] ?? ''] ?? ucfirst($movie['language'] ?? '');
               ?>
               <tr>

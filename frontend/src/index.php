@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../backend/DataService.php';
+require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 $top10Directors = $service->getTopDirectors(10);
