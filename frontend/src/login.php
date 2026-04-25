@@ -20,8 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $fullName = trim($_POST['full_name'] ?? '');
 
     if ($action === 'signup') {
-        if (empty($userId) || empty($password) || empty($fullName)) {
+        $confirmPassword = $_POST['confirm_password'] ?? '';
+        if (empty($userId) || empty($password) || empty($fullName) || empty($confirmPassword)) {
             $error = "All fields are required for signup.";
+        } elseif ($password !== $confirmPassword) {
+            $error = "Passwords do not match.";
         } else {
             if ($service->signup($fullName, $userId, $password)) {
                 $success = "Signup successful! You can now login.";
@@ -211,7 +214,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" name="password" placeholder="••••••••" required>
+        <input type="password" name="password" id="signup-pwd" placeholder="••••••••" required>
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" name="confirm_password" id="signup-cpwd" placeholder="••••••••" required>
       </div>
       <button type="submit" class="btn-auth">Create Account</button>
       <div class="auth-toggle">
@@ -236,6 +243,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             subtitle.innerText = "Login to access your analytics dashboard";
         }
     }
+
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+        const pwd = document.getElementById('signup-pwd').value;
+        const cpwd = document.getElementById('signup-cpwd').value;
+        if (pwd !== cpwd) {
+            e.preventDefault();
+            alert('Passwords do not match. Please try again.');
+        }
+    });
   </script>
 </body>
 </html>

@@ -5,44 +5,19 @@ require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 
-// Q1: Director Excellence
-$topDirectorList = $service->getTopDirectors(1);
-$topDirector = $topDirectorList[0] ?? ['director' => 'Unknown', 'avg_rating' => 0];
-
-// Q2: Genre Trends
+// New Crazy Insights
+$flopMasterpieces = $service->getFlopMasterpieces(3);
+$disasters = $service->getCommercialDisasters(3);
+$oneHitWonders = $service->getOneHitWonders(3);
+$versatileActors = $service->getActorGenreVersatility(5);
+$actorDuos = $service->getRepeatCollaborators(3, 5);
 $genreTrend = $service->getGenreTrend();
-
-// Q3: Dynamic Duos
-$duos = $service->getActorDirectorCollaborations(3);
-
-// Q4: Language Champions
 $langChamps = $service->getLanguageRevenueAverages(3);
 
-// Q5: Runtime — removed (column does not exist in schema)
-$runtimeStats = [];
-
-// Q6: 100 Crore Club
-$highGrossing = $service->getHighGrossingGenres(3);
-
-// Q7: Prolific Performers
-$topActors = $service->getTopActors(5);
-
-// Q8: Decade of Masterpieces
-$decades = $service->getDecadeRatings();
-$topDecade = $decades[0] ?? ['decade' => 0, 'avg_rating' => 0];
-
-// Q9: Quality vs Commercial
-$qualVCom = $service->getRatingRevenueCorrelation();
-
-// Q10: Golden Year
-$goldenYear = $service->getGoldenYear();
-if (empty($goldenYear)) $goldenYear = ['yr' => '—', 'total_revenue' => 0, 'movie_count' => 0];
-
-// Q11: Versatile Actors (Top actors in most genres)
-$versatileActors = $service->getActorGenreVersatility(5);
-
-// Q12: Frequent Collaborators (Actor-Actor duos)
-$actorDuos = $service->getRepeatCollaborators(3, 5);
+// Additional insights
+$langRatingComp = $service->getLanguageRatingComparison();
+$decadeRatings  = $service->getDecadeRatings();
+$topDirsByCount = $service->getTopDirectorsByCount(3);
 
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296'];
 ?>
@@ -106,44 +81,60 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
       <div class="insights-grid">
         
-        <!-- Q1 -->
+        <!-- CRAZY INSIGHT 1 -->
         <div class="card insight-card">
           <div class="q-number">INSIGHT #1</div>
-          <div class="q-title">Director Excellence</div>
-          <div class="q-desc">Which director has the highest average IMDb rating across their entire filmography?</div>
-          <div class="a-content">
-            <div class="big-stat"><?= htmlspecialchars($topDirector['director']) ?></div>
-            <div class="big-stat-sub">&#x2605; <?= number_format($topDirector['avg_rating'], 1) ?> Average Rating</div>
-          </div>
-        </div>
-
-        <!-- Q3 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #2</div>
-          <div class="q-title">Dynamic Duos</div>
-          <div class="q-desc">Which actor-director duos frequently collaborate, and what is their box office success?</div>
+          <div class="q-title">The Flop Masterpieces</div>
+          <div class="q-desc">Which universally acclaimed movies (IMDb ≥ 8.0) completely bombed at the box office?</div>
           <div class="a-content">
             <table class="mini-table">
-              <tr><th>Duo</th><th>Films</th><th>Avg Revenue</th></tr>
-              <?php foreach ($duos as $duo): ?>
+              <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
+              <?php foreach ($flopMasterpieces as $fm): ?>
               <tr>
-                <td style="font-weight: 600;"><?= htmlspecialchars($duo['director']) ?><br><span style="color:var(--text-secondary); font-size: 0.75rem;">& <?= htmlspecialchars($duo['actor']) ?></span></td>
-                <td><?= $duo['count'] ?></td>
-                <td>&#x20B9;<?= formatRevenue($duo['avg_revenue']) ?></td>
+                <td style="font-weight: 600;"><?= htmlspecialchars($fm['title']) ?><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($fm['rating_imdb'], 1) ?></span></td>
+                <td style="text-align:right; color: #ef4444;">&#x20B9;<?= formatRevenue($fm['revenue']) ?></td>
               </tr>
               <?php endforeach; ?>
             </table>
           </div>
         </div>
 
-        <!-- Q10 -->
+        <!-- CRAZY INSIGHT 2 -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #2</div>
+          <div class="q-title">Commercial Disasters</div>
+          <div class="q-desc">Which highly profitable movies were absolutely hated by audiences (IMDb < 5.0)?</div>
+          <div class="a-content">
+            <table class="mini-table">
+              <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
+              <?php foreach ($disasters as $cd): ?>
+              <tr>
+                <td style="font-weight: 600;"><?= htmlspecialchars($cd['title']) ?><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($cd['rating_imdb'], 1) ?></span></td>
+                <td style="text-align:right; color: var(--accent-green); font-weight: bold;">&#x20B9;<?= formatRevenue($cd['revenue']) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
+          </div>
+        </div>
+
+        <!-- CRAZY INSIGHT 3 -->
         <div class="card insight-card">
           <div class="q-number">INSIGHT #3</div>
-          <div class="q-title">The Golden Year</div>
-          <div class="q-desc">Which specific year saw the highest total combined box office revenue in cinema history?</div>
+          <div class="q-title">One-Hit Wonders</div>
+          <div class="q-desc">Which actors appeared in exactly ONE movie, but it made massive box office revenue?</div>
           <div class="a-content">
-            <div class="big-stat"><?= $goldenYear['yr'] ?></div>
-            <div class="big-stat-sub">&#x20B9;<?= formatRevenue($goldenYear['total_revenue']) ?> Total Across <?= $goldenYear['movie_count'] ?> Films</div>
+             <table class="mini-table">
+              <tr><th>Actor</th><th style="text-align:right;">Movie / Revenue</th></tr>
+              <?php foreach ($oneHitWonders as $ohw): ?>
+              <tr>
+                <td style="font-weight: 600; color: var(--accent-primary);"><?= htmlspecialchars($ohw['actor']) ?></td>
+                <td style="text-align:right;">
+                  <div style="font-size: 0.8rem;"><?= htmlspecialchars($ohw['title']) ?></div>
+                  <div style="color: var(--accent-green); font-size: 0.7rem; font-weight: bold;">&#x20B9;<?= formatRevenue($ohw['revenue']) ?></div>
+                </td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
           </div>
         </div>
 
@@ -169,67 +160,11 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           </div>
         </div>
 
-        <!-- Q9 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #5</div>
-          <div class="q-title">Quality vs. Commercials</div>
-          <div class="q-desc">How does average box office compare between flop rated movies and masterpieces?</div>
-          <div class="a-content">
-            <?php foreach ($qualVCom as $q): ?>
-              <div style="display:flex; justify-content:space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border-color);">
-                <span style="font-size: 0.8rem; font-weight: 600;"><?= $q['rating_category'] ?></span>
-                <span class="text-accent font-bold" style="font-size: 0.85rem;">&#x20B9;<?= formatRevenue($q['avg_revenue']) ?></span>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
 
-        <!-- Q8 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #6</div>
-          <div class="q-title">Decades of Masterpieces</div>
-          <div class="q-desc">Which decade actually produced the consistently highest average-rated films?</div>
-          <div class="a-content" style="background: linear-gradient(135deg, rgba(92,214,182,0.1), transparent);">
-             <div class="big-stat" style="color: var(--accent-green);"><?= $topDecade['decade'] ?>s</div>
-             <div class="text-muted" style="font-size: 0.8rem;">&#x2605; <?= number_format($topDecade['avg_rating'], 2) ?> Average Score</div>
-          </div>
-        </div>
-
-        <!-- Q7 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #7</div>
-          <div class="q-title">Prolific Performers</div>
-          <div class="q-desc">Which actors have appeared in the most films across the entire dataset?</div>
-          <div class="a-content">
-            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-              <?php foreach ($topActors as $act): ?>
-                <span style="background: var(--bg-highlight); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">
-                   <?= htmlspecialchars($act['name']) ?> <span style="color: var(--text-muted); font-size: 0.65rem;">(<?= $act['count'] ?>)</span>
-                </span>
-              <?php endforeach; ?>
-            </div>
-          </div>
-        </div>
-
-
-        <!-- Q6 -->
-        <div class="card insight-card">
-          <div class="q-number">INSIGHT #8</div>
-          <div class="q-title">The 100-Crore Club</div>
-          <div class="q-desc">Which genres are statistically most likely to produce movies grossing > ₹100 Cr?</div>
-          <div class="a-content">
-            <?php foreach ($highGrossing as $hg): ?>
-              <div style="display:flex; justify-content:space-between; padding: 0.35rem 0; font-size: 0.85rem;">
-                <span class="font-bold"><?= htmlspecialchars($hg['primary_genre']) ?></span>
-                <span class="text-accent"><?= $hg['club_count'] ?> Blockbusters</span>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
 
         <!-- Q11: Versatile Actors -->
         <div class="card insight-card">
-          <div class="q-number">INSIGHT #9</div>
+          <div class="q-number">INSIGHT #5</div>
           <div class="q-title">Genre Versatility</div>
           <div class="q-desc">Which actors have displayed the most range by working across diverse genres?</div>
           <div class="a-content">
@@ -247,7 +182,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
         <!-- Q12: Frequent Collaborators -->
         <div class="card insight-card">
-          <div class="q-number">INSIGHT #10</div>
+          <div class="q-number">INSIGHT #6</div>
           <div class="q-title">Frequent Pairings</div>
           <div class="q-desc">Which actor duos are the most frequent collaborators on screen?</div>
           <div class="a-content">
@@ -266,7 +201,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
         <!-- Q2 -->
         <div class="card insight-card" style="grid-column: span 2;">
-          <div class="q-number">INSIGHT #11</div>
+          <div class="q-number">INSIGHT #7</div>
           <div class="q-title">Genre Trends Over Time</div>
           <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
           
@@ -295,9 +230,70 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           </div>
         </div>
 
+        <!-- INSIGHT #8: Language Rating Showdown -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #8</div>
+          <div class="q-title">Language Rating Showdown</div>
+          <div class="q-desc">Which film industry produces the highest average IMDb score? Ranked by critical acclaim.</div>
+          <div class="a-content">
+            <table class="mini-table">
+              <tr><th>Industry</th><th style="text-align:right;">Avg Rating</th><th style="text-align:right;">Peak</th></tr>
+              <?php
+                $lmap = ['hi'=>'Bollywood','ta'=>'Kollywood','te'=>'Tollywood','ml'=>'Mollywood','kn'=>'Sandalwood','en'=>'Hollywood'];
+                foreach (array_slice($langRatingComp, 0, 5) as $lrc):
+                  $lname = $lmap[strtolower($lrc['language'])] ?? strtoupper($lrc['language']);
+              ?>
+              <tr>
+                <td style="font-weight:600;"><?= htmlspecialchars($lname) ?><br><span style="color:var(--text-secondary);font-size:0.7rem;"><?= $lrc['movie_count'] ?> films</span></td>
+                <td style="text-align:right; color:var(--accent-primary); font-weight:700;">&#x2605; <?= number_format($lrc['avg_rating'],2) ?></td>
+                <td style="text-align:right; color:var(--accent-green);">&#x2605; <?= number_format($lrc['max_rating'],1) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
+          </div>
+        </div>
+
+        <!-- INSIGHT #9: Decade Breakdown -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #9</div>
+          <div class="q-title">Decade Report Card</div>
+          <div class="q-desc">How does each decade compare in average quality? Which era produced the most films?</div>
+          <div class="a-content">
+            <table class="mini-table">
+              <tr><th>Decade</th><th style="text-align:right;">Avg Rating</th><th style="text-align:right;">Films</th></tr>
+              <?php foreach ($decadeRatings as $dr): ?>
+              <tr>
+                <td style="font-weight:700; color:var(--accent-primary);"><?= $dr['decade'] ?>s</td>
+                <td style="text-align:right;">&#x2605; <?= number_format($dr['avg_rating'],2) ?></td>
+                <td style="text-align:right; color:var(--text-muted);"><?= $dr['movie_count'] ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
+          </div>
+        </div>
+
+        <!-- INSIGHT #10: Workhorse Directors -->
+        <div class="card insight-card">
+          <div class="q-number">INSIGHT #10</div>
+          <div class="q-title">The Workhorses</div>
+          <div class="q-desc">Directors who have the highest sheer volume of films — quantity vs. quality breakdown.</div>
+          <div class="a-content">
+            <table class="mini-table">
+              <tr><th>Director</th><th style="text-align:right;">Films</th><th style="text-align:right;">Avg Rating</th></tr>
+              <?php foreach ($topDirsByCount as $td): ?>
+              <tr>
+                <td style="font-weight:600;"><?= htmlspecialchars($td['director']) ?></td>
+                <td style="text-align:right; color:var(--accent-primary); font-weight:700;"><?= $td['movie_count'] ?></td>
+                <td style="text-align:right;">&#x2605; <?= number_format($td['avg_rating'],1) ?></td>
+              </tr>
+              <?php endforeach; ?>
+            </table>
+          </div>
+        </div>
+
       </div>
 
-      
+    </div>
   </main>
 </body>
 </html>

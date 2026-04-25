@@ -15,7 +15,7 @@ $filterLang  = trim($_GET['lang'] ?? '');
 $filterMinYear  = trim($_GET['min_year'] ?? '');
 $filterMaxYear  = trim($_GET['max_year'] ?? '');
 $filterMinRating = trim($_GET['min_rating'] ?? '');
-$sortBy = trim($_GET['sort'] ?? 'rating');
+$sortBy = trim($_GET['sort'] ?? 'title');
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
 
@@ -26,16 +26,10 @@ $allLangs  = $service->getDistinctLanguages();
 
 $hasFilter = !empty($searchQuery) || !empty($filterGenre) || !empty($filterLang) || !empty($filterMinYear) || !empty($filterMaxYear) || !empty($filterMinRating);
 
-$results = [];
-$total = 0;
-$totalPages = 0;
-
-if ($hasFilter) {
-    $data = $service->searchMovies($searchQuery, $filterGenre, $filterLang, $filterMinYear, $filterMaxYear, $filterMinRating, $sortBy, $page, $perPage);
-    $results = $data['results'];
-    $total = $data['total'];
-    $totalPages = ceil($total / $perPage);
-}
+$data = $service->searchMovies($searchQuery, $filterGenre, $filterLang, $filterMinYear, $filterMaxYear, $filterMinRating, $sortBy, $page, $perPage);
+$results = $data['results'];
+$total = $data['total'];
+$totalPages = ceil($total / $perPage);
 
 
 $singleMovie = null;
@@ -166,7 +160,7 @@ function paginationUrl($page) {
           </div>
           <div class="filter-group">
             <label>Min Rating</label>
-            <input type="number" name="min_rating" min="0" max="10" step="0.5" placeholder="0" value="<?= htmlspecialchars($filterMinRating) ?>" style="width:70px;">
+            <input type="number" name="min_rating" min="0" max="10" step="0.1" placeholder="0" value="<?= htmlspecialchars($filterMinRating) ?>" style="width:70px;">
           </div>
           <div class="filter-group">
             <label>Sort By</label>
@@ -188,8 +182,6 @@ function paginationUrl($page) {
         </div>
       </form>
 
-
-      <?php if ($hasFilter): ?>
 
         <div class="results-header">
           <div class="results-count">
@@ -267,13 +259,6 @@ function paginationUrl($page) {
           </div>
         <?php endif; ?>
 
-      <?php else: ?>
-        <div class="empty-state">
-          <div style="font-size: 40px; margin-bottom: 15px;">&#x1F3AC;</div>
-          <h2 style="margin-bottom: 10px;">Search The Database</h2>
-          <p class="text-muted">Use the filters above to explore the film database. You can search by title, genre, language, year range, and minimum rating.</p>
-        </div>
-      <?php endif; ?>
 
       <div class="page-footer">THE CINEMATIC LENS &copy; 2025. ADVANCED SEARCH ENGINE.</div>
     </div>

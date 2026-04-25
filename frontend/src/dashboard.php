@@ -17,7 +17,12 @@ $genreTrend = $service->getGenreTrend();
 // Trending Movies
 $trending = $service->getTrendingMovies(5);
 
-// Fallbacks — show real data or empty state
+// New: Top directors & recent acclaimed
+$topDirsByCount = $service->getTopDirectorsByCount(5);
+$recentAcclaimed = $service->getRecentHighRated(4, 2018);
+$yearlyRevenue = $service->getYearlyRevenueTrend(2010);
+
+// Fallbacks—show real data or empty state
 if ($avgRating == 0) $avgRating = null;
 $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue) : '—';
 ?>
@@ -82,6 +87,47 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         </div>
       </div>
 
+      <!-- STAT CARDS ROW 2: Total Movies -->
+      <div class="stats-grid" style="margin-top: 0;">
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-card-label">TOTAL FILMS</span>
+            <div class="stat-card-icon">&#x1F3AC;</div>
+          </div>
+          <div class="stat-card-value"><?= number_format($totalMovies) ?></div>
+          <div class="stat-card-sub" style="color: var(--text-muted);">in the database</div>
+        </div>
+
+        <?php
+          $maxRevYr = !empty($yearlyRevenue) ? max(array_column($yearlyRevenue, 'total_revenue')) : 1;
+          $recentYr = !empty($yearlyRevenue) ? end($yearlyRevenue) : ['yr'=>'—','total_revenue'=>0,'movie_count'=>0];
+        ?>
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-card-label">BEST REVENUE YEAR</span>
+            <div class="stat-card-icon">&#x1F4C5;</div>
+          </div>
+          <?php
+            $bestRevYr = $yearlyRevenue[0] ?? ['yr'=>'—','total_revenue'=>0];
+            foreach ($yearlyRevenue as $yr) {
+              if ($yr['total_revenue'] > $bestRevYr['total_revenue']) $bestRevYr = $yr;
+            }
+          ?>
+          <div class="stat-card-value" style="font-size: 1.8rem;"><?= $bestRevYr['yr'] ?></div>
+          <div class="stat-card-sub" style="color: var(--accent-green);">&#x20B9;<?= formatRevenue($bestRevYr['total_revenue']) ?> box office</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <span class="stat-card-label">MOST FILMS DIRECTED</span>
+            <div class="stat-card-icon">&#x1F3AC;</div>
+          </div>
+          <?php $topD = $topDirsByCount[0] ?? ['director'=>'—','movie_count'=>0]; ?>
+          <div class="stat-card-value" style="font-size: 1.1rem; line-height: 1.2;"><?= htmlspecialchars($topD['director']) ?></div>
+          <div class="stat-card-sub" style="color: var(--text-muted);"><?= $topD['movie_count'] ?> films directed</div>
+        </div>
+      </div>
+
       <!-- MIDDLE ROW: Chart + Editorial -->
       <div class="middle-row">
         <!-- Bar Chart -->
@@ -133,9 +179,81 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
           </div>
         </div>
 
-     
-   
-       
+        <!-- Trending Movies List -->
+        <div class="card" style="display: flex; flex-direction: column;">
+          <div class="chart-label">BOX OFFICE HOTSTREAK</div>
+          <div class="chart-title" style="margin-bottom: 1rem;">Trending Blockbusters</div>
+          <div style="display: flex; flex-direction: column; gap: 0.8rem; flex: 1;">
+            <?php if (!empty($trending)): ?>
+              <?php foreach ($trending as $idx => $movie): ?>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-color);">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-muted); opacity: 0.5;">0<?= $idx + 1 ?></div>
+                  <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);"><?= htmlspecialchars($movie['title']) ?></div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);"><?= htmlspecialchars($movie['director']) ?> &bull; <?= htmlspecialchars($movie['yr']) ?></div>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-weight: 700; color: var(--accent-primary); font-size: 0.9rem;">&#x20B9;<?= formatRevenue($movie['revenue']) ?></div>
+                  <div style="font-size: 0.75rem; color: var(--accent-green);">&#x2B50; <?= number_format($movie['rating_imdb'], 1) ?></div>
+                </div>
+              </div>
+              <?php endforeach; ?>
+            <?php else: ?>
+              <div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">No trending movies available.</div>
+            <?php endif; ?>
+          </div>
+          <div style="text-align: center; margin-top: 1rem;">
+            <a href="search.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW: Directors Leaderboard + Recent Acclaimed -->
+      <div class="middle-row" style="margin-top: 1.5rem;">
+
+        <!-- Top Directors by Film Count -->
+        <div class="card">
+          <div class="chart-label">DIRECTOR LEADERBOARD</div>
+          <div class="chart-title" style="margin-bottom: 1rem;">Most Prolific Directors</div>
+          <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+            <?php foreach ($topDirsByCount as $di => $d): ?>
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-color);">
+              <div style="font-size: 1rem; font-weight: 800; color: var(--accent-primary); min-width: 24px; text-align: center;"><?= $di + 1 ?></div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700; font-size: 0.9rem;"><?= htmlspecialchars($d['director']) ?></div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);"><?= $d['movie_count'] ?> films &bull; &#x2605; <?= number_format($d['avg_rating'], 1) ?> avg</div>
+              </div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green);">&#x20B9;<?= formatRevenue($d['total_revenue']) ?></div>
+            </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+
+        <!-- Recent Critically Acclaimed -->
+        <div class="card">
+          <div class="chart-label">RECENT GEMS</div>
+          <div class="chart-title" style="margin-bottom: 1rem;">Critically Acclaimed (2018+)</div>
+          <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+            <?php foreach ($recentAcclaimed as $ra): ?>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <div style="font-weight: 700; font-size: 0.92rem;"><?= htmlspecialchars($ra['title']) ?></div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);"><?= htmlspecialchars($ra['director']) ?> &bull; <?= $ra['release_year'] ?></div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);"><?= htmlspecialchars($ra['genre_name']) ?></div>
+              </div>
+              <div style="text-align: right; flex-shrink: 0; padding-left: 1rem;">
+                <div style="font-weight: 800; color: var(--accent-primary); font-size: 1.1rem;">&#x2605; <?= number_format($ra['rating_imdb'], 1) ?></div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">&#x20B9;<?= formatRevenue($ra['revenue']) ?></div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if (empty($recentAcclaimed)): ?>
+              <div style="color: var(--text-muted); text-align: center; padding: 2rem 0;">No recent data available.</div>
+            <?php endif; ?>
+          </div>
+        </div>
       </div>
 
       <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
