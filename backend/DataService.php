@@ -992,6 +992,145 @@ class DataService {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) { return []; }
     }
+    // ── EXPLORE TRENDS PAGE ────────────────────────────────────
+
+    public function getTopActorsDetailed($limit = 12) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT CONCAT(a.first_name, ' ', a.last_name) as name,
+                       COUNT(ma.movie_id) as total_films,
+                       ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                       SUM(m.revenue) as total_revenue,
+                       MAX(m.rating_imdb) as best_rating,
+                       MIN(m.release_year) as career_start,
+                       MAX(m.release_year) as career_latest,
+                       GROUP_CONCAT(DISTINCT g.genre_name ORDER BY g.genre_name SEPARATOR ', ') as genres
+                FROM Actors a
+                JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                JOIN Movies m ON ma.movie_id = m.movie_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE a.first_name NOT LIKE '%Unknown%' AND m.rating_imdb > 0
+                GROUP BY a.actor_id
+                HAVING COUNT(ma.movie_id) >= 2
+                ORDER BY total_revenue DESC
+                LIMIT :limit
+            ");
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getTopDirectorsDetailed($limit = 12) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT CONCAT(d.first_name, ' ', d.last_name) as name,
+                       COUNT(m.movie_id) as total_films,
+                       ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                       SUM(m.revenue) as total_revenue,
+                       MAX(m.rating_imdb) as best_rating,
+                       MIN(m.release_year) as career_start,
+                       MAX(m.release_year) as career_latest,
+                       GROUP_CONCAT(DISTINCT g.genre_name ORDER BY g.genre_name SEPARATOR ', ') as genres
+                FROM Directors d
+                JOIN Movies m ON d.director_id = m.director_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE d.first_name NOT LIKE '%Unknown%' AND m.rating_imdb > 0
+                GROUP BY d.director_id
+                HAVING COUNT(m.movie_id) >= 2
+                ORDER BY avg_rating DESC
+                LIMIT :limit
+            ");
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getYearlyMovieCount() {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->query("
+                SELECT release_year as yr, COUNT(movie_id) as count,
+                       ROUND(AVG(rating_imdb), 2) as avg_rating,
+                       SUM(revenue) as total_revenue
+                FROM Movies
+                WHERE release_year IS NOT NULL AND release_year > 1990
+                GROUP BY release_year
+                ORDER BY release_year ASC
+            ");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getGenreDistribution() {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->query("
+                SELECT g.genre_name, COUNT(m.movie_id) as count,
+                       ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                       SUM(m.revenue) as total_revenue
+                FROM Genres g
+                JOIN Movies m ON g.genre_id = m.genre_id
+                GROUP BY g.genre_id
+                ORDER BY count DESC
+            ");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getRatingDistribution() {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->query("
+                SELECT
+                    CASE
+                        WHEN rating_imdb >= 9.0 THEN '9+'
+                        WHEN rating_imdb >= 8.0 THEN '8-9'
+                        WHEN rating_imdb >= 7.0 THEN '7-8'
+                        WHEN rating_imdb >= 6.0 THEN '6-7'
+                        WHEN rating_imdb >= 5.0 THEN '5-6'
+                        ELSE 'Below 5'
+                    END as bracket,
+                    COUNT(movie_id) as count
+                FROM Movies
+                WHERE rating_imdb > 0
+                GROUP BY bracket
+                ORDER BY MIN(rating_imdb) DESC
+            ");
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getTopMoviesByDecade($limit = 3) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->query("
+                SELECT FLOOR(m.release_year / 10) * 10 as decade,
+                       m.title, m.rating_imdb, m.revenue,
+                       CONCAT(d.first_name, ' ', d.last_name) as director,
+                       g.genre_name
+                FROM Movies m
+                JOIN Directors d ON m.director_id = d.director_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE m.rating_imdb > 0 AND m.release_year > 1990
+                ORDER BY m.release_year DESC, m.rating_imdb DESC
+            ");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $grouped = [];
+            foreach ($rows as $row) {
+                $decade = $row['decade'] . 's';
+                if (!isset($grouped[$decade])) $grouped[$decade] = [];
+                if (count($grouped[$decade]) < $limit) {
+                    $grouped[$decade][] = $row;
+                }
+            }
+            return $grouped;
+        } catch(PDOException $e) { return []; }
+    }
+
     // ── AUTHENTICATION ─────────────────────────────────────────
     
     public function signup($name, $userId, $password) {
