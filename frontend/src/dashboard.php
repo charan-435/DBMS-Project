@@ -156,26 +156,35 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             $maxVal = max($maxAction, $maxRomance, 1);
           ?>
 
-          <div class="bar-chart">
-            <?php foreach ($chartData as $yr => $data): 
-              $actionH = round(($data['action_count'] / $maxVal) * 100);
-              $romanceH = round(($data['romance_count'] / $maxVal) * 100);
-            ?>
-              <div class="bar-group" title="<?= $yr ?>">
-                <div class="bar bar-action" style="height: <?= max($actionH, 3) ?>%;"></div>
-                <div class="bar bar-romance" style="height: <?= max($romanceH, 3) ?>%;"></div>
+          <div style="display: flex; gap: 12px;">
+            <div style="display: flex; flex-direction: column; justify-content: space-between; height: 160px; font-size: 0.65rem; color: var(--text-muted); text-align: right; padding-bottom: 0.75rem; min-width: 25px;">
+              <span><?= $maxVal ?></span>
+              <span><?= round($maxVal / 2) ?></span>
+              <span>0</span>
+            </div>
+            <div style="flex: 1;">
+              <div class="bar-chart">
+                <?php foreach ($chartData as $yr => $data): 
+                  $actionH = round(($data['action_count'] / $maxVal) * 100);
+                  $romanceH = round(($data['romance_count'] / $maxVal) * 100);
+                ?>
+                  <div class="bar-group" title="<?= $yr ?>: Action (<?= $data['action_count'] ?>), Romance (<?= $data['romance_count'] ?>)">
+                    <div class="bar bar-action" style="height: <?= max($actionH, 3) ?>%;"></div>
+                    <div class="bar bar-romance" style="height: <?= max($romanceH, 3) ?>%;"></div>
+                  </div>
+                <?php endforeach; ?>
               </div>
-            <?php endforeach; ?>
-          </div>
 
-          <div class="chart-years">
-            <?php 
-              $dispYears = array_keys($chartData);
-              $step = max(1, floor(count($dispYears) / 6));
-              for ($i = 0; $i < count($dispYears); $i += $step) {
-                  echo '<span>' . $dispYears[$i] . '</span>';
-              }
-            ?>
+              <div class="chart-years">
+                <?php 
+                  $dispYears = array_keys($chartData);
+                  $step = max(1, floor(count($dispYears) / 6));
+                  for ($i = 0; $i < count($dispYears); $i += $step) {
+                      echo '<span>' . $dispYears[$i] . '</span>';
+                  }
+                ?>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -209,7 +218,7 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <?php endif; ?>
           </div>
           <div style="text-align: center; margin-top: 1rem;">
-            <a href="search.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
+            <a href="movies.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
           </div>
         </div>
       </div>
@@ -266,7 +275,7 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
+      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
 
     </div>
   </main>

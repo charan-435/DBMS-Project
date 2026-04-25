@@ -8,10 +8,18 @@ require_once __DIR__ . '/components/utils.php';
 
 $ds = new DataService();
 
-$highestRated = $ds->getHighestRatedOverall(4);
+// ── Optimized Data Fetching ──────────────────────────────────────────────────
+$industryKPIs  = $ds->getIndustryKPIData();
+$totalMovies   = $industryKPIs['total_movies'] ?? 0;
+$totalRevenue  = $industryKPIs['total_revenue'] ?? 0;
+$avgRating     = $industryKPIs['avg_rating'] ?? 0;
+$topGenre      = $industryKPIs['top_genre'] ?? ['genre' => 'Unknown', 'count' => 0];
+
+$highestRated   = $ds->getHighestRatedOverall(4);
 $profitableDirs = $ds->getMostProfitableDirectors(4);
 $langRatingComp = $ds->getLanguageRatingComparison();
 $yearlyRevTrend = $ds->getYearlyRevenueTrend(2010);
+$top_films      = $ds->getTopRegionalMovies(5);
 
 // ── Helper: language code → industry name ─────────────────────────────────────
 function industryName(string $code): string {
@@ -22,11 +30,8 @@ function industryName(string $code): string {
     return $map[strtolower(trim($code))] ?? strtoupper($code);
 }
 
-// ── 1. KPI bar ────────────────────────────────────────────────────────────────
-$totalRevenue = $ds->getTotalRevenue();
-$totalMovies  = $ds->getTotalMovies();
-$avgRating    = $ds->getAvgRating();
-$topGenre     = $ds->getMostActiveGenre();
+// Already fetched in combined KPI call above
+
 
 // ── 2. Market Share donut ─────────────────────────────────────────────────────
 $langStats    = $ds->getLanguageStats(6);
@@ -72,14 +77,8 @@ ksort($trend);
 $trend_years = array_keys($trend);
 $trend_empty = count($trend) === 0;
 
-// ── 4. Top Regional Films (non-Hindi, from getTopGrossingMovies) ──────────────
-$allTopMovies = $ds->getTopGrossingMovies(20);
-$top_films    = [];
-foreach ($allTopMovies as $row) {
-    if (strtolower(trim($row['language'] ?? '')) === 'hi') continue;
-    $top_films[] = $row;
-    if (count($top_films) >= 5) break;
-}
+// Already fetched via getTopRegionalMovies() optimized call
+
 
 // ── 5. Regional Superstars ────────────────────────────────────────────────────
 $topActors = $ds->getTopActors(4);
@@ -414,7 +413,8 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
             $xFor = fn(int $i): float => $pad + ($i / ($n - 1)) * ($sw - $pad * 2);
             ?>
             <svg class="chart-svg" viewBox="0 0 <?= $sw ?> <?= $sh ?>" height="160" preserveAspectRatio="none">
-                <?php foreach ([.25, .5, .75, 1] as $g): ?>
+                <?php foreach ([0, .5, 1] as $g): ?>
+                <text x="<?= $pad - 6 ?>" y="<?= $sh - $pad - $g * ($sh - $pad*2) + 3 ?>" text-anchor="end" style="font-size: 8px; fill: #64647a; font-family: 'DM Mono', monospace;"><?= round($g * $max_trend) ?></text>
                 <line x1="<?= $pad ?>" y1="<?= $sh - $pad - $g * ($sh - $pad*2) ?>"
                       x2="<?= $sw - $pad ?>" y2="<?= $sh - $pad - $g * ($sh - $pad*2) ?>"
                       stroke="#1a1a22" stroke-width="1"/>

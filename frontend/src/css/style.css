@@ -897,3 +897,30 @@ input, select, button {
   text-transform: uppercase;
   padding: 2rem 0;
 }
+/* ====== GENRE TAGS & BUTTONS ====== */
+.genre-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.btn-accent {
+  background: var(--accent-primary);
+  color: var(--bg-dark);
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-accent:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
