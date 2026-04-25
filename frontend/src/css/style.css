@@ -192,30 +192,57 @@ input, select, button {
   display: flex;
   align-items: center;
   width: 100%;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: visible;
+  transition: border-color 0.2s;
+}
+.search-input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 15px rgba(126, 175, 232, 0.1);
+}
+.search-type-select {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-color);
+  color: var(--accent-primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.6rem 0.75rem;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.search-field-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 .search-input-wrapper .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.75rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   pointer-events: none;
   z-index: 2;
 }
 .search-input-wrapper input {
   width: 100% !important;
-  background-color: var(--bg-input) !important;
-  border: 1px solid var(--border-color) !important;
+  background-color: transparent !important;
+  border: none !important;
   color: var(--text-primary) !important;
-  padding: 0.6rem 1rem 0.6rem 2.5rem !important;
-  border-radius: 20px !important;
+  padding: 0.6rem 1rem 0.6rem 2.25rem !important;
+  border-radius: 0 20px 20px 0 !important;
   font-size: 0.85rem !important;
   transition: all 0.2s ease !important;
+  outline: none !important;
 }
 .search-input-wrapper input:focus {
   outline: none !important;
-  border-color: var(--accent-primary) !important;
-  background-color: var(--bg-card) !important;
-  box-shadow: 0 0 15px rgba(126, 175, 232, 0.1) !important;
 }
 
 .search-dropdown {
@@ -223,7 +250,7 @@ input, select, button {
   top: calc(100% + 10px);
   left: 0;
   right: 0;
-  background-color: #1e1f2a !important; /* var(--bg-card) fallback */
+  background-color: #1e1f2a !important;
   background-color: var(--bg-card) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-md) !important;
