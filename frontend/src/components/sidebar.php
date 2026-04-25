@@ -21,10 +21,7 @@
     </a>
     <a href="collaborations.php" class="nav-item <?= ($currentPage == 'collaborations.php') ? 'active' : '' ?>">
       Collaborations
-    </a>
-    <a href="explore.php" class="nav-item <?= ($currentPage == 'explore.php') ? 'active' : '' ?>">
-      &#x1F9ED; Explore Trends
-    </a>
+    
     <a href="industry.php" class="nav-item <?= ($currentPage == 'industry.php') ? 'active' : '' ?>">
      Regional Stats
     </a>
