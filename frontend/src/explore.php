@@ -208,7 +208,7 @@ $mostActiveGenre = $service->getMostActiveGenre();
                 <option value="bar">Bar Chart</option>
                 <option value="line">Line Chart</option>
                 <option value="pie">Pie Chart</option>
-                <option value="doughnut">Doughnut Chart</option>
+                <option value="radar">Radar Chart</option>
               </select>
               <button class="btn-outline" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="downloadChart()">⬇ Download Chart</button>
             </div>
@@ -413,22 +413,29 @@ $mostActiveGenre = $service->getMostActiveGenre();
           datasets: [{
             label: currentMetName,
             data: currentValues,
-            backgroundColor: type === 'line' ? 'rgba(249, 115, 22, 0.2)' : colors,
-            borderColor: type === 'line' ? 'rgba(249, 115, 22, 1)' : colors.map(c => c.replace('0.8', '1')),
-            borderWidth: 1,
-            fill: type === 'line'
+            backgroundColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 0.2)' : colors,
+            borderColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 1)' : colors.map(c => c.replace('0.8', '1')),
+            borderWidth: 2,
+            fill: (type === 'line' || type === 'radar')
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: type === 'pie' || type === 'doughnut', position: 'right', labels: { color: '#eeeef5' } }
+            legend: { display: type === 'pie' || type === 'radar', position: 'right', labels: { color: '#eeeef5' } }
           },
-          scales: (type === 'pie' || type === 'doughnut') ? {} : {
+          scales: (type === 'pie') ? {} : (type === 'radar' ? {
+            r: {
+              angleLines: { color: '#1f1f27' },
+              grid: { color: '#1f1f27' },
+              pointLabels: { color: '#64647a' },
+              ticks: { display: false, backdropColor: 'transparent' }
+            }
+          } : {
             y: { ticks: { color: '#64647a' }, grid: { color: '#1f1f27' } },
             x: { ticks: { color: '#64647a' }, grid: { color: '#1f1f27' } }
-          }
+          })
         }
       });
     }
