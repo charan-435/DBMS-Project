@@ -642,6 +642,90 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
+    public function buildDynamicInsight($params) {
+        if (!$this->conn) return [];
+        
+        $dimension = $params['dimension'] ?? 'genre_name';
+        $metric_func = strtoupper($params['metric_func'] ?? 'COUNT');
+        $metric_field = $params['metric_field'] ?? 'movie_id';
+        $sort_dir = strtoupper($params['sort_dir'] ?? 'DESC');
+        $limit = (int)($params['limit'] ?? 50);
+        $filters = $params['filters'] ?? [];
+        
+        // Whitelists to prevent SQL injection
+        $allowedDimensions = ['release_year', 'genre_name', 'director_name', 'language', 'title', 'movie_id'];
+        $allowedMetrics = ['COUNT', 'SUM', 'AVG', 'MAX', 'MIN'];
+        $allowedMetricFields = ['movie_id', 'revenue', 'rating_imdb', 'release_year'];
+        $allowedOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
+        
+        if (!in_array($dimension, $allowedDimensions)) $dimension = 'genre_name';
+        if (!in_array($metric_func, $allowedMetrics)) $metric_func = 'COUNT';
+        if (!in_array($metric_field, $allowedMetricFields)) $metric_field = 'movie_id';
+        if (!in_array($sort_dir, ['ASC', 'DESC'])) $sort_dir = 'DESC';
+        if ($limit < 1 || $limit > 500) $limit = 50;
+        
+        $whereClauses = [];
+        $binds = [];
+        
+        foreach ($filters as $i => $filter) {
+            $f = $filter['field'] ?? '';
+            $op = strtoupper($filter['operator'] ?? '=');
+            $v = $filter['value'] ?? '';
+            
+            if (in_array($f, array_merge($allowedDimensions, $allowedMetricFields))) {
+                if (in_array($op, $allowedOperators)) {
+                    $paramName = ":p_{$i}";
+                    $whereClauses[] = "$f $op $paramName";
+                    if ($op === 'LIKE') {
+                        $binds[$paramName] = "%{$v}%";
+                    } else {
+                        $binds[$paramName] = $v;
+                    }
+                }
+            }
+        }
+        
+        $whereSql = '';
+        if (!empty($whereClauses)) {
+            $whereSql = "WHERE " . implode(" AND ", $whereClauses);
+        }
+        
+        $groupBy = "GROUP BY $dimension";
+        if ($dimension === 'title' || $dimension === 'movie_id') {
+            $groupBy = "GROUP BY movie_id"; // Better grouping for raw movies
+        }
+        
+        $metricSql = "$metric_func($metric_field)";
+        if ($metric_func === 'COUNT' && $metric_field === 'movie_id') {
+            $metricSql = "COUNT(DISTINCT movie_id)";
+        }
+        
+        $sql = "SELECT $dimension as label, ROUND($metricSql, 2) as value 
+                FROM movie_full_details 
+                $whereSql 
+                $groupBy 
+                ORDER BY value $sort_dir 
+                LIMIT $limit";
+                
+        try {
+            $stmt = $this->conn->prepare($sql);
+            foreach ($binds as $key => $val) {
+                $stmt->bindValue($key, $val);
+            }
+            $stmt->execute();
+            return [
+                'status' => 'success',
+                'data' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'query_info' => [
+                    'dimension' => $dimension,
+                    'metric' => "$metric_func($metric_field)"
+                ]
+            ];
+        } catch (PDOException $e) {
+            return ['status' => 'error', 'message' => 'Database error occurred.'];
+        }
+    }
+
     // ── CRUD OPERATIONS ──────────────────────────────────────
 
     // Get all genres for dropdowns
