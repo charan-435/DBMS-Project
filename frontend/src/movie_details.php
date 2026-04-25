@@ -21,7 +21,7 @@ foreach ($directorStats as $d) {
 $filmsBefore = 0;
 $dirCareer = $service->getDirectorCareerTrend($movie['director_id']);
 foreach($dirCareer as $dc) {
-    if ($dc['yr'] < $movie['release_year']) $filmsBefore += $dc['movie_count'];
+    if ($dc['yr'] < $movie['release_year']) $filmsBefore += 1;
     else if ($dc['yr'] == $movie['release_year']) break;
 }
 $nthFilm = $filmsBefore + 1;
@@ -426,7 +426,7 @@ if (!empty($movie['cast'])) {
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2025.</div>
+      <div class="page-footer">THE CINEMATIC LENS &copy; 2026.</div>
     </div>
   </main>
 

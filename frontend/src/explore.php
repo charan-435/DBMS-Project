@@ -344,7 +344,7 @@ $genreTrend = $service->getGenreTrend();
          </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2025. NO-CODE ANALYTICS ENGINE.</div>
+      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. NO-CODE ANALYTICS ENGINE.</div>
     </div>
   </main>
 
@@ -595,7 +595,24 @@ $genreTrend = $service->getGenreTrend();
           } : {
             y: { ticks: { color: '#64647a' }, grid: { color: '#1f1f27' } },
             x: { ticks: { color: '#64647a' }, grid: { color: '#1f1f27' } }
-          })
+          }),
+          plugins: {
+            tooltip: {
+              callbacks: {
+                afterLabel: function(context) {
+                  const dataIndex = context.dataIndex;
+                  const row = currentData[dataIndex];
+                  if (!row) return '';
+                  let extra = [];
+                  if (row.movie_count !== undefined) extra.push('Movie Count: ' + row.movie_count);
+                  if (row.rating_avg !== undefined) extra.push('Avg Rating: ' + parseFloat(row.rating_avg).toFixed(1));
+                  if (row.revenue_sum !== undefined) extra.push('Total Revenue: ' + (parseFloat(row.revenue_sum)/10000000).toFixed(1) + ' Cr');
+                  if (row.release_year_val !== undefined) extra.push('Year: ' + row.release_year_val);
+                  return extra.length > 0 ? '\n' + extra.join('\n') : '';
+                }
+              }
+            }
+          }
         }
       });
     }
@@ -608,12 +625,20 @@ $genreTrend = $service->getGenreTrend();
       if (isMultiSeries) return; // Handled by renderTrendTable
       const thead = document.getElementById('rt-head');
       const tbody = document.getElementById('rt-body');
-      
-      thead.innerHTML = `<th>${currentDimName.toUpperCase()}</th><th>${currentMetName.toUpperCase()}</th>`;
+      const extraCols = [];
+      if (currentData.length > 0) {
+        if (currentData[0].movie_count !== undefined) extraCols.push('Movie Count');
+        if (currentData[0].rating_avg !== undefined) extraCols.push('Avg Rating');
+        if (currentData[0].revenue_sum !== undefined) extraCols.push('Total Revenue');
+        if (currentData[0].release_year_val !== undefined) extraCols.push('Year');
+      }
+
+      thead.innerHTML = `<th>${currentDimName.toUpperCase()}</th><th>${currentMetName.toUpperCase()}</th>` + 
+                         extraCols.map(c => `<th>${c.toUpperCase()}</th>`).join('');
       tbody.innerHTML = '';
       
       if (currentData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding: 2rem;">No results found for these filters.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${2 + extraCols.length}" style="text-align:center; padding: 2rem;">No results found for these filters.</td></tr>`;
         return;
       }
       
@@ -629,9 +654,16 @@ $genreTrend = $service->getGenreTrend();
           labelHtml = `<a href="actor_details.php?id=${row.actor_id}" class="movie-link">${labelHtml} <span style="font-size: 0.7rem; color: var(--accent-primary);">↗</span></a>`;
         }
         
+        let extraTd = '';
+        if (row.movie_count !== undefined) extraTd += `<td style="color:var(--text-muted);">${row.movie_count}</td>`;
+        if (row.rating_avg !== undefined) extraTd += `<td style="color:var(--text-muted);">${parseFloat(row.rating_avg).toFixed(1)}</td>`;
+        if (row.revenue_sum !== undefined) extraTd += `<td style="color:var(--text-muted);">&#x20B9;${(parseFloat(row.revenue_sum)/10000000).toFixed(1)} Cr</td>`;
+        if (row.release_year_val !== undefined) extraTd += `<td style="color:var(--text-muted);">${row.release_year_val}</td>`;
+
         tr.innerHTML = `
           <td style="font-weight: 600;">${labelHtml}</td>
           <td style="color: var(--accent-primary); font-weight: 700;">${row.value}</td>
+          ${extraTd}
         `;
         tbody.appendChild(tr);
       });

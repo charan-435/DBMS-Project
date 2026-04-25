@@ -1,8 +1,6 @@
 <?php
-/**
- * API Endpoint for Explore Data Dashboard
- * Handles dynamic insight building requests.
- */
+ob_start();
+error_reporting(0);
 header('Content-Type: application/json');
 require_once __DIR__ . '/../../backend/DataService.php';
 
@@ -35,14 +33,17 @@ if ($action === 'build_insight') {
     ];
 
     $result = $service->buildDynamicInsight($params);
+    ob_clean();
     echo json_encode($result);
     exit;
 }
 
 if ($action === 'get_trend_analysis') {
     $data = $service->getGenreTrend();
+    ob_clean();
     echo json_encode(['status' => 'success', 'data' => $data]);
     exit;
 }
 
+ob_clean();
 echo json_encode(['status' => 'error', 'message' => 'Invalid action']);
