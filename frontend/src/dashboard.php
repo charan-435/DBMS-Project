@@ -190,8 +190,12 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                   <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-muted); opacity: 0.5;">0<?= $idx + 1 ?></div>
                   <div>
-                    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary);"><?= htmlspecialchars($movie['title']) ?></div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);"><?= htmlspecialchars($movie['director']) ?> &bull; <?= htmlspecialchars($movie['yr']) ?></div>
+                    <div style="font-weight: 700; font-size: 0.95rem;">
+                      <a href="movie_details.php?id=<?= $movie['movie_id'] ?>" style="color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($movie['title']) ?></a>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                      <a href="director_details.php?id=<?= $movie['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($movie['director']) ?></a> &bull; <?= htmlspecialchars($movie['yr']) ?>
+                    </div>
                   </div>
                 </div>
                 <div style="text-align: right;">
@@ -222,7 +226,9 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <div style="display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-color);">
               <div style="font-size: 1rem; font-weight: 800; color: var(--accent-primary); min-width: 24px; text-align: center;"><?= $di + 1 ?></div>
               <div style="flex: 1;">
-                <div style="font-weight: 700; font-size: 0.9rem;"><?= htmlspecialchars($d['director']) ?></div>
+                <div style="font-weight: 700; font-size: 0.9rem;">
+                  <a href="director_details.php?id=<?= $d['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($d['director']) ?></a>
+                </div>
                 <div style="font-size: 0.72rem; color: var(--text-secondary);"><?= $d['movie_count'] ?> films &bull; &#x2605; <?= number_format($d['avg_rating'], 1) ?> avg</div>
               </div>
               <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green);">&#x20B9;<?= formatRevenue($d['total_revenue']) ?></div>
@@ -239,9 +245,13 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <?php foreach ($recentAcclaimed as $ra): ?>
             <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-color);">
               <div>
-                <div style="font-weight: 700; font-size: 0.92rem;"><?= htmlspecialchars($ra['title']) ?></div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary);"><?= htmlspecialchars($ra['director']) ?> &bull; <?= $ra['release_year'] ?></div>
-                <div style="font-size: 0.7rem; color: var(--text-muted);"><?= htmlspecialchars($ra['genre_name']) ?></div>
+                <div style="font-weight: 700; font-size: 0.92rem;">
+                  <a href="movie_details.php?id=<?= $ra['movie_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($ra['title']) ?></a>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);">
+                  <a href="director_details.php?id=<?= $ra['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($ra['director']) ?></a> &bull; <?= $ra['yr'] ?>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);"><?= htmlspecialchars($ra['genres'] ?? '') ?></div>
               </div>
               <div style="text-align: right; flex-shrink: 0; padding-left: 1rem;">
                 <div style="font-weight: 800; color: var(--accent-primary); font-size: 1.1rem;">&#x2605; <?= number_format($ra['rating_imdb'], 1) ?></div>

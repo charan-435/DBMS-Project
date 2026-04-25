@@ -39,4 +39,10 @@ if ($action === 'build_insight') {
     exit;
 }
 
+if ($action === 'get_trend_analysis') {
+    $data = $service->getGenreTrend();
+    echo json_encode(['status' => 'success', 'data' => $data]);
+    exit;
+}
+
 echo json_encode(['status' => 'error', 'message' => 'Invalid action']);

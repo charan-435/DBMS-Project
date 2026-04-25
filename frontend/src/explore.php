@@ -7,6 +7,11 @@ $service = new DataService();
 $totalMovies = $service->getTotalMovies();
 $avgRating = $service->getAvgRating();
 $mostActiveGenre = $service->getMostActiveGenre();
+
+// Curated Insights Data
+$flopMasterpieces = $service->getFlopMasterpieces(3);
+$disasters = $service->getCommercialDisasters(3);
+$genreTrend = $service->getGenreTrend();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -89,6 +94,37 @@ $mostActiveGenre = $service->getMostActiveGenre();
   .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
   
   .flex-row { display: flex; gap: 0.5rem; }
+
+  /* Curated Insights Styling */
+  .curated-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 3rem;
+  }
+  .insight-card { 
+    background: var(--bg-card); 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius-lg); 
+    padding: 1.5rem;
+    display: flex; 
+    flex-direction: column; 
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .insight-card:hover { border-color: var(--accent-primary); transform: translateY(-2px); }
+  .q-number { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.12em; margin-bottom: 0.6rem; text-transform: uppercase; }
+  .q-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .q-desc { font-size: 1.15rem; color: var(--accent-primary); margin-bottom: 1.5rem; line-height: 1.45; font-weight: 700; }
+  .a-content { background: rgba(17, 18, 26, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); backdrop-filter: blur(12px); }
+  
+  .mini-table { width: 100%; border-collapse: collapse; }
+  .mini-table th { text-align: left; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
+  .mini-table td { padding: 0.5rem 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border-color); }
+  .mini-table tr:last-child td { border-bottom: none; }
+
+  .movie-link { color: inherit; text-decoration: none; transition: color 0.2s; }
+  .movie-link:hover { color: var(--accent-primary); text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -138,9 +174,17 @@ $mostActiveGenre = $service->getMostActiveGenre();
           <div class="suggestion-title">Top Revenue Directors</div>
           <div class="suggestion-desc">See which directors generated the highest total box office.</div>
         </div>
+        <div class="suggestion-card" onclick="applySuggestion('genre_name', 'SUM', 'revenue', 'DESC')">
+          <div class="suggestion-title">Genre Revenue Share</div>
+          <div class="suggestion-desc">Identify the most profitable genres across the platform.</div>
+        </div>
         <div class="suggestion-card" onclick="applySuggestion('language', 'AVG', 'rating_imdb', 'DESC')">
           <div class="suggestion-title">Best Languages</div>
           <div class="suggestion-desc">Compare average ratings across different film industries.</div>
+        </div>
+        <div class="suggestion-card" onclick="runTrendAnalysis()">
+          <div class="suggestion-title">Comparative Genre Trend</div>
+          <div class="suggestion-desc">Analyze the production volume of Action vs Romance over the years.</div>
         </div>
       </div>
 
@@ -245,6 +289,61 @@ $mostActiveGenre = $service->getMostActiveGenre();
         </div>
       </div>
 
+      <!-- Curated Deep Dives (Insights from the Intelligence Hub) -->
+      <div style="margin-top: 4rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 1rem;">
+        <h2 style="font-size: 1.5rem; font-weight: 800;">Curated <em style="color: var(--accent-primary); font-style: italic;">Deep Dives</em></h2>
+        <div style="flex: 1; height: 1px; background: linear-gradient(to right, var(--border-color), transparent);"></div>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Pre-calculated intelligence reports focusing on anomalies and trends across the industry.</p>
+      
+      <div class="curated-grid">
+         <!-- Flop Masterpieces -->
+         <div class="insight-card">
+           <div class="q-number">SPECIAL REPORT</div>
+           <div class="q-title">The Flop Masterpieces</div>
+           <div class="q-desc">Which universally acclaimed movies (IMDb ≥ 8.0) completely bombed at the box office?</div>
+           <div class="a-content">
+             <table class="mini-table">
+               <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
+               <?php foreach ($flopMasterpieces as $fm): ?>
+               <tr>
+                 <td style="font-weight: 600;"><a href="movie_details.php?id=<?= $fm['movie_id'] ?>" class="movie-link"><?= htmlspecialchars($fm['title']) ?></a><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($fm['rating_imdb'], 1) ?></span></td>
+                 <td style="text-align:right; color: #ef4444;">&#x20B9;<?= formatRevenue($fm['revenue']) ?></td>
+               </tr>
+               <?php endforeach; ?>
+             </table>
+           </div>
+         </div>
+
+         <!-- Commercial Disasters -->
+         <div class="insight-card">
+           <div class="q-number">SPECIAL REPORT</div>
+           <div class="q-title">Commercial Hits, Critical Misses</div>
+           <div class="q-desc">Which highly profitable movies were absolutely hated by audiences (IMDb < 5.0)?</div>
+           <div class="a-content">
+             <table class="mini-table">
+               <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
+               <?php foreach ($disasters as $cd): ?>
+               <tr>
+                 <td style="font-weight: 600;"><a href="movie_details.php?id=<?= $cd['movie_id'] ?>" class="movie-link"><?= htmlspecialchars($cd['title']) ?></a><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($cd['rating_imdb'], 1) ?></span></td>
+                 <td style="text-align:right; color: var(--accent-green); font-weight: bold;">&#x20B9;<?= formatRevenue($cd['revenue']) ?></td>
+               </tr>
+               <?php endforeach; ?>
+             </table>
+           </div>
+         </div>
+
+         <!-- Genre Trends -->
+         <div class="insight-card">
+           <div class="q-number">TREND ANALYSIS</div>
+           <div class="q-title">Genre Shifts Over Time</div>
+           <div class="q-desc">Production volume trend of Action versus Romance movies over the decades.</div>
+           <div class="a-content" style="height: 180px; padding: 0.5rem; display: flex; align-items: center; justify-content: center;">
+              <canvas id="curatedGenreTrendChart"></canvas>
+           </div>
+         </div>
+      </div>
+
       <div class="page-footer">THE CINEMATIC LENS &copy; 2025. NO-CODE ANALYTICS ENGINE.</div>
     </div>
   </main>
@@ -256,6 +355,8 @@ $mostActiveGenre = $service->getMostActiveGenre();
     let currentValues = [];
     let currentDimName = '';
     let currentMetName = '';
+    let isMultiSeries = false;
+    let multiSeriesDatasets = [];
 
     const metricConfigs = {
       movie_id: { allowedFuncs: ['COUNT'] },
@@ -315,6 +416,7 @@ $mostActiveGenre = $service->getMostActiveGenre();
           <option value="release_year">Year</option>
           <option value="rating_imdb">Rating</option>
           <option value="revenue">Revenue</option>
+          <option value="movie_count">Movie Count (Grouped)</option>
         </select>
         <select class="f-op" style="flex:0.5;">
           <option value="=">=</option>
@@ -340,7 +442,51 @@ $mostActiveGenre = $service->getMostActiveGenre();
       runInsight();
     }
 
+    function runTrendAnalysis() {
+      isMultiSeries = true;
+      document.getElementById('chart-loading').style.display = 'flex';
+      
+      fetch('api_explore.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_trend_analysis' })
+      })
+      .then(r => r.json())
+      .then(res => {
+        document.getElementById('chart-loading').style.display = 'none';
+        if(res.status === 'success') {
+          currentDimName = 'Release Year';
+          currentMetName = 'Film Count';
+          currentLabels = res.data.map(d => d.yr);
+          
+          multiSeriesDatasets = [
+            {
+              label: 'Action',
+              data: res.data.map(d => parseInt(d.action_count)),
+              borderColor: '#f97316',
+              backgroundColor: 'rgba(249, 115, 22, 0.1)',
+              fill: true,
+              tension: 0.4
+            },
+            {
+              label: 'Romance',
+              data: res.data.map(d => parseInt(d.romance_count)),
+              borderColor: '#5cd6b6',
+              backgroundColor: 'rgba(92, 214, 182, 0.1)',
+              fill: true,
+              tension: 0.4
+            }
+          ];
+          
+          document.getElementById('chart-type').value = 'line';
+          renderChart();
+          renderTrendTable(res.data);
+        }
+      });
+    }
+
     function runInsight() {
+      isMultiSeries = false;
       const dim = document.getElementById('b-dimension').value;
       const mFunc = document.getElementById('b-metric-func').value;
       const mField = document.getElementById('b-metric-field').value;
@@ -402,27 +548,36 @@ $mostActiveGenre = $service->getMostActiveGenre();
       
       if (myChart) { myChart.destroy(); }
       
-      const colors = [
-        'rgba(249, 115, 22, 0.8)',
-        'rgba(92, 214, 182, 0.8)',
-        'rgba(110, 168, 254, 0.8)',
-        'rgba(166, 141, 255, 0.8)',
-        'rgba(255, 130, 150, 0.8)',
-        'rgba(251, 191, 36, 0.8)'
-      ];
+      let datasets = [];
+      if (isMultiSeries) {
+        datasets = multiSeriesDatasets.map(ds => ({
+          ...ds,
+          type: type === 'bar' ? 'bar' : 'line' // Allow toggling between bar/line for trends
+        }));
+      } else {
+        const colors = [
+          'rgba(249, 115, 22, 0.8)',
+          'rgba(92, 214, 182, 0.8)',
+          'rgba(110, 168, 254, 0.8)',
+          'rgba(166, 141, 255, 0.8)',
+          'rgba(255, 130, 150, 0.8)',
+          'rgba(251, 191, 36, 0.8)'
+        ];
+        datasets = [{
+          label: currentMetName,
+          data: currentValues,
+          backgroundColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 0.2)' : colors,
+          borderColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 1)' : colors.map(c => c.replace('0.8', '1')),
+          borderWidth: 2,
+          fill: (type === 'line' || type === 'radar')
+        }];
+      }
 
       myChart = new Chart(ctx, {
         type: type,
         data: {
           labels: currentLabels,
-          datasets: [{
-            label: currentMetName,
-            data: currentValues,
-            backgroundColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 0.2)' : colors,
-            borderColor: (type === 'line' || type === 'radar') ? 'rgba(249, 115, 22, 1)' : colors.map(c => c.replace('0.8', '1')),
-            borderWidth: 2,
-            fill: (type === 'line' || type === 'radar')
-          }]
+          datasets: datasets
         },
         options: {
           responsive: true,
@@ -450,6 +605,7 @@ $mostActiveGenre = $service->getMostActiveGenre();
     }
 
     function renderTable() {
+      if (isMultiSeries) return; // Handled by renderTrendTable
       const thead = document.getElementById('rt-head');
       const tbody = document.getElementById('rt-body');
       
@@ -463,9 +619,37 @@ $mostActiveGenre = $service->getMostActiveGenre();
       
       currentData.forEach(row => {
         const tr = document.createElement('tr');
+        let labelHtml = row.label || 'Unknown';
+        
+        if (row.movie_id) {
+          labelHtml = `<a href="movie_details.php?id=${row.movie_id}" class="movie-link">${labelHtml} <span style="font-size: 0.7rem; color: var(--accent-primary);">↗</span></a>`;
+        } else if (row.director_id) {
+          labelHtml = `<a href="director_details.php?id=${row.director_id}" class="movie-link">${labelHtml} <span style="font-size: 0.7rem; color: var(--accent-primary);">↗</span></a>`;
+        } else if (row.actor_id) {
+          labelHtml = `<a href="actor_details.php?id=${row.actor_id}" class="movie-link">${labelHtml} <span style="font-size: 0.7rem; color: var(--accent-primary);">↗</span></a>`;
+        }
+        
         tr.innerHTML = `
-          <td style="font-weight: 600;">${row.label || 'Unknown'}</td>
+          <td style="font-weight: 600;">${labelHtml}</td>
           <td style="color: var(--accent-primary); font-weight: 700;">${row.value}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderTrendTable(data) {
+      const thead = document.getElementById('rt-head');
+      const tbody = document.getElementById('rt-body');
+      
+      thead.innerHTML = `<th>YEAR</th><th>ACTION</th><th>ROMANCE</th>`;
+      tbody.innerHTML = '';
+      
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-weight: 600;">${row.yr}</td>
+          <td style="color: #f97316; font-weight: 700;">${row.action_count}</td>
+          <td style="color: #5cd6b6; font-weight: 700;">${row.romance_count}</td>
         `;
         tbody.appendChild(tr);
       });
@@ -500,38 +684,91 @@ $mostActiveGenre = $service->getMostActiveGenre();
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
-    
-    // Auto-run first insight
+
+    // Auto-run first insight or from URL params
     window.onload = function() {
       const urlParams = new URLSearchParams(window.location.search);
       const q = urlParams.get('q');
       
       if (q) {
-        document.getElementById('b-dimension').value = 'title';
-        document.getElementById('b-metric-field').value = 'rating_imdb';
+        // Default to a Career Trend (Line Chart) when searching for a specific name
+        document.getElementById('b-dimension').value = 'release_year';
+        document.getElementById('b-metric-field').value = 'revenue';
+        document.getElementById('b-chart-type').value = 'line';
         updateMetricFunctions();
-        document.getElementById('b-metric-func').value = 'MAX';
+        document.getElementById('b-metric-func').value = 'SUM';
         
-        // Add a combined search filter for Title, Director, and Cast
         const container = document.getElementById('filters-container');
-        container.innerHTML = ''; // Clear defaults
+        container.innerHTML = ''; 
         
-        const createFilter = (field, val) => {
-            addFilterRow();
-            const row = container.lastElementChild;
-            row.querySelector('.f-field').value = field;
-            row.querySelector('.f-op').value = 'LIKE';
-            row.querySelector('.f-val').value = val;
-        };
-
-        // Use the new 'search' filter that looks at Title, Director, and Cast
-        createFilter('search', q);
+        addFilterRow();
+        const row = container.lastElementChild;
+        row.querySelector('.f-field').value = 'search'; 
+        row.querySelector('.f-op').value = 'LIKE';
+        row.querySelector('.f-val').value = q;
         
         runInsight();
       } else {
         applySuggestion('genre_name', 'AVG', 'rating_imdb', 'DESC');
       }
+
+      // Initialize Curated Genre Trend Chart
+      <?php
+        $trendYears = [];
+        $actionCounts = [];
+        $romanceCounts = [];
+        foreach ($genreTrend as $row) { 
+            $trendYears[] = (int)$row['yr'];
+            $actionCounts[] = (int)$row['action_count'];
+            $romanceCounts[] = (int)$row['romance_count'];
+        }
+      ?>
+      const curatedCtx = document.getElementById('curatedGenreTrendChart').getContext('2d');
+      new Chart(curatedCtx, {
+          type: 'line',
+          data: {
+              labels: <?= json_encode($trendYears) ?>,
+              datasets: [
+                  {
+                      label: 'Action',
+                      data: <?= json_encode($actionCounts) ?>,
+                      borderColor: '#f5c518',
+                      backgroundColor: 'rgba(245, 197, 24, 0.1)',
+                      borderWidth: 2,
+                      tension: 0.4,
+                      fill: true,
+                      pointRadius: 0
+                  },
+                  {
+                      label: 'Romance',
+                      data: <?= json_encode($romanceCounts) ?>,
+                      borderColor: '#5cd6b6',
+                      backgroundColor: 'rgba(92, 214, 182, 0.1)',
+                      borderWidth: 2,
+                      tension: 0.4,
+                      fill: true,
+                      pointRadius: 0
+                  }
+              ]
+          },
+          options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                  legend: {
+                      display: true,
+                      position: 'top',
+                      labels: { color: '#8b8d9e', font: { size: 9 }, usePointStyle: true }
+                  }
+              },
+              scales: {
+                  x: { display: false },
+                  y: { display: false }
+              }
+          }
+      });
     };
   </script>
 </body>
