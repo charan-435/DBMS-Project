@@ -61,7 +61,11 @@ SELECT
     CONCAT(d.first_name, ' ', d.last_name) AS director_name,
     g.genre_name,
     g.genre_id,
-    d.director_id
+    d.director_id,
+    (SELECT GROUP_CONCAT(CONCAT(a.first_name, ' ', a.last_name) SEPARATOR ', ')
+     FROM Movie_Actors ma
+     JOIN Actors a ON ma.actor_id = a.actor_id
+     WHERE ma.movie_id = m.movie_id) as cast_names
 FROM Movies m
 JOIN Directors d ON m.director_id = d.director_id
 JOIN Genres g    ON m.genre_id    = g.genre_id;

@@ -155,6 +155,7 @@ $mostActiveGenre = $service->getMostActiveGenre();
               <option value="genre_name">Genre</option>
               <option value="release_year">Release Year</option>
               <option value="director_name">Director</option>
+              <option value="cast_names">Cast / Actors</option>
               <option value="language">Language</option>
               <option value="title">Movie Title</option>
             </select>
@@ -306,8 +307,12 @@ $mostActiveGenre = $service->getMostActiveGenre();
       row.className = 'filter-row';
       row.innerHTML = `
         <select class="f-field">
-          <option value="release_year">Year</option>
+          <option value="search">Search All</option>
+          <option value="title">Title</option>
+          <option value="director_name">Director</option>
+          <option value="cast_names">Cast / Actors</option>
           <option value="genre_name">Genre</option>
+          <option value="release_year">Year</option>
           <option value="rating_imdb">Rating</option>
           <option value="revenue">Revenue</option>
         </select>
@@ -507,12 +512,22 @@ $mostActiveGenre = $service->getMostActiveGenre();
         document.getElementById('b-metric-field').value = 'rating_imdb';
         updateMetricFunctions();
         document.getElementById('b-metric-func').value = 'MAX';
-        addFilterRow();
-        const firstRow = document.querySelector('.filter-row');
-        firstRow.querySelector('.f-field').innerHTML += '<option value="title">Title</option>';
-        firstRow.querySelector('.f-field').value = 'title';
-        firstRow.querySelector('.f-op').value = 'LIKE';
-        firstRow.querySelector('.f-val').value = q;
+        
+        // Add a combined search filter for Title, Director, and Cast
+        const container = document.getElementById('filters-container');
+        container.innerHTML = ''; // Clear defaults
+        
+        const createFilter = (field, val) => {
+            addFilterRow();
+            const row = container.lastElementChild;
+            row.querySelector('.f-field').value = field;
+            row.querySelector('.f-op').value = 'LIKE';
+            row.querySelector('.f-val').value = val;
+        };
+
+        // Use the new 'search' filter that looks at Title, Director, and Cast
+        createFilter('search', q);
+        
         runInsight();
       } else {
         applySuggestion('genre_name', 'AVG', 'rating_imdb', 'DESC');
