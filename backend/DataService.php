@@ -3,7 +3,7 @@
 require_once __DIR__ . '/Database.php';
 
 class DataService {
-    private $conn;
+    protected $conn;
 
     public function __construct() {
         $this->conn = Database::getConnection();
