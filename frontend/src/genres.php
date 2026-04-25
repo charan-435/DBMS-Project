@@ -13,7 +13,14 @@ $runnerUp = $genreStats[1] ?? ['primary_genre' => 'Unknown', 'movie_count' => 0,
 $totalMoviesSum = array_sum(array_column($genreStats, 'movie_count'));
 $topSharePercent = $totalMoviesSum > 0 ? round(($topGenre['movie_count'] / $totalMoviesSum) * 100) : 0;
 
+$service2 = new DataService();
+$genreRatingBoard = $service2->getGenreRatingLeaderboard(6);
+$genreRevPerFilm  = $service2->getGenreRevenuePerFilm(6);
+$bestYearPerGenre = $service2->getBestYearPerGenre();
+
 $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'Tollywood (Telugu)', 'ml' => 'Mollywood (Malayalam)', 'kn' => 'Sandalwood (Kannada)', 'en' => 'English'];
+
+$barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee', '#f97316'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -176,6 +183,93 @@ $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'T
           </tbody>
         </table>
       </div>
+
+      <!-- Genre Rating Leaderboard + Revenue Per Film -->
+      <div class="genres-middle" style="margin-top: 1.5rem;">
+
+        <!-- Genre by Avg Rating -->
+        <div class="card">
+          <div class="chart-label">CRITICAL ACCLAIM</div>
+          <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem;">Genre Rating Leaderboard</h2>
+          <?php
+            $maxRating = !empty($genreRatingBoard) ? max(array_column($genreRatingBoard, 'avg_rating')) : 10;
+            if ($maxRating == 0) $maxRating = 10;
+          ?>
+          <?php foreach ($genreRatingBoard as $index => $gr): ?>
+          <div class="region-chart-item">
+            <div class="flex-row">
+              <span class="font-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($gr['genre_name']) ?></span>
+              <span style="font-size: 0.8rem;">
+                <span style="color: var(--accent-primary); font-weight: 700;">&#x2605; <?= $gr['avg_rating'] ?></span>
+                <span style="color: var(--text-muted); margin-left: 6px;">(<?= $gr['movie_count'] ?> films)</span>
+              </span>
+            </div>
+            <div class="region-bar-track">
+              <div class="region-bar-fill" style="width: <?= round(($gr['avg_rating'] / $maxRating) * 100) ?>%; background-color: <?= $barColors[$index % count($barColors)] ?>;"></div>
+            </div>
+          </div>
+          <?php endforeach; ?>
+          <?php if (empty($genreRatingBoard)): ?>
+            <p class="text-muted text-sm">No rated genre data found.</p>
+          <?php endif; ?>
+        </div>
+
+        <!-- Revenue Per Film by Genre -->
+        <div class="card">
+          <div class="chart-label">BOX OFFICE EFFICIENCY</div>
+          <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem;">Avg Revenue Per Film by Genre</h2>
+          <?php
+            $maxRPF = !empty($genreRevPerFilm) ? max(array_column($genreRevPerFilm, 'avg_revenue_per_film')) : 1;
+            if ($maxRPF == 0) $maxRPF = 1;
+          ?>
+          <?php foreach ($genreRevPerFilm as $index => $rpf): ?>
+          <div class="region-chart-item">
+            <div class="flex-row">
+              <span class="font-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($rpf['genre_name']) ?></span>
+              <span class="font-bold <?= $index === 0 ? 'text-accent' : 'text-secondary' ?>" style="font-size: 0.85rem;">&#x20B9;<?= formatRevenue($rpf['avg_revenue_per_film']) ?>/film</span>
+            </div>
+            <div class="region-bar-track">
+              <div class="region-bar-fill" style="width: <?= round(($rpf['avg_revenue_per_film'] / $maxRPF) * 100) ?>%; background-color: <?= $barColors[$index % count($barColors)] ?>;"></div>
+            </div>
+          </div>
+          <?php endforeach; ?>
+          <?php if (empty($genreRevPerFilm)): ?>
+            <p class="text-muted text-sm">No revenue data found.</p>
+          <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Best Year Per Genre Table -->
+      <?php if (!empty($bestYearPerGenre)): ?>
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="trending-header">
+          <div>
+            <div class="trending-label">PEAK PERFORMANCE</div>
+            <h2 class="trending-title">Best Box Office Year Per Genre</h2>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Genre</th>
+              <th>Peak Year</th>
+              <th>Films That Year</th>
+              <th>Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach (array_slice($bestYearPerGenre, 0, 8) as $byg): ?>
+            <tr>
+              <td><span class="genre-badge genre-action"><?= htmlspecialchars(strtoupper($byg['genre_name'])) ?></span></td>
+              <td><?= $byg['best_year'] ?></td>
+              <td><?= $byg['movie_count'] ?> films</td>
+              <td class="font-bold">&#x20B9;<?= formatRevenue($byg['total_revenue']) ?></td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <?php endif; ?>
 
       <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>

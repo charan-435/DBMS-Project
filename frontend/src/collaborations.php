@@ -19,6 +19,10 @@ $repeatActors = $service->getRepeatCollaborators(2, 8);
 // Top directors for the network
 $topDirs = $service->getTopDirectors(5);
 
+// New: Top actors by revenue + actors who work with most directors
+$actorsByRevenue = $service->getTopActorsByRevenue(6);
+$actorsDirDiversity = $service->getActorCollaborationCount(6);
+
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee', '#f97316'];
 ?>
 <!DOCTYPE html>
@@ -122,11 +126,8 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             <?php foreach ($duos as $i => $duo): ?>
             <div class="duo-item">
               <div class="duo-left">
-                <div class="duo-avatar" style="background: <?= $barColors[$i % count($barColors)] ?>;">
-                  <?= $i + 1 ?>
-                </div>
-                <div>
-                  <div class="duo-director"><?= htmlspecialchars($duo['director']) ?></div>
+                <div style="display:flex; flex-direction:column; justify-content:center; padding-left: 0.5rem; border-left: 3px solid <?= $barColors[$i % count($barColors)] ?>;">
+                  <div class="duo-director" style="font-size: 1rem;"><?= htmlspecialchars($duo['director']) ?></div>
                   <div class="duo-actor">&amp; <?= htmlspecialchars($duo['actor']) ?></div>
                 </div>
               </div>
@@ -163,10 +164,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
           ?>
           <div class="network-node" style="left: <?= $pos['left'] ?>; top: <?= $pos['top'] ?>;">
-            <div class="network-circle" style="background: <?= $color ?>; width: <?= $di === 0 ? '60px' : '46px' ?>; height: <?= $di === 0 ? '60px' : '46px' ?>;">
-              <?= $initials ?>
-            </div>
-            <div class="network-label"><?= htmlspecialchars(end($nameParts)) ?></div>
+            <div class="network-label" style="font-size: 0.95rem; font-weight: 700; color: <?= $color ?>; max-width: none;"><?= htmlspecialchars($dir['director']) ?></div>
             <div class="network-sublabel"><?= $dir['movie_count'] ?> films</div>
           </div>
           <?php endforeach; endif; ?>
@@ -217,6 +215,59 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             <?php endforeach; ?>
           <?php else: ?>
             <p class="text-muted" style="text-align:center; padding:2rem;">No repeat collaborators found (need actors appearing in 2+ films together).</p>
+          <?php endif; ?>
+        </div>
+      </div>
+      <!-- New Row: Actor Revenue Rankings + Director Diversity -->
+      <div class="collab-grid-equal" style="margin-top: 0;">
+
+        <!-- Top Actors by Total Box Office -->
+        <div class="card">
+          <div class="section-label">BOX OFFICE KINGS</div>
+          <div class="card-title-collab">Actors by Total Revenue</div>
+          <?php if (!empty($actorsByRevenue)): ?>
+            <?php
+              $maxActRev = max(array_column($actorsByRevenue, 'total_revenue'));
+              if ($maxActRev == 0) $maxActRev = 1;
+            ?>
+            <?php foreach ($actorsByRevenue as $i => $ar): ?>
+            <div style="padding: 0.7rem 0; border-bottom: 1px solid var(--border-color);">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span style="font-weight: 600; font-size: 0.88rem;"><?= htmlspecialchars($ar['actor']) ?></span>
+                <span style="font-weight: 700; color: var(--accent-green); font-size: 0.85rem;">&#x20B9;<?= formatRevenue($ar['total_revenue']) ?></span>
+              </div>
+              <div style="height: 3px; background: var(--border-color); border-radius: 2px;">
+                <div style="height: 3px; width: <?= round(($ar['total_revenue'] / $maxActRev) * 100) ?>%; background: <?= $barColors[$i % count($barColors)] ?>; border-radius: 2px;"></div>
+              </div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem;"><?= $ar['movie_count'] ?> films &bull; &#x2605; <?= number_format($ar['avg_rating'], 1) ?> avg</div>
+            </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <p class="text-muted" style="text-align:center; padding:2rem;">No actor revenue data available.</p>
+          <?php endif; ?>
+        </div>
+
+        <!-- Actors with Most Unique Directors -->
+        <div class="card">
+          <div class="section-label">CREATIVE RANGE</div>
+          <div class="card-title-collab">Actors Across Most Directors</div>
+          <?php if (!empty($actorsDirDiversity)): ?>
+            <?php foreach ($actorsDirDiversity as $i => $ad): ?>
+            <div class="duo-item">
+              <div class="duo-left">
+                <div style="display:flex; flex-direction:column; justify-content:center; padding-left: 0.5rem; border-left: 3px solid <?= $barColors[$i % count($barColors)] ?>;">
+                  <div class="duo-director" style="font-size: 1rem;"><?= htmlspecialchars($ad['actor']) ?></div>
+                  <div class="duo-actor"><?= $ad['total_films'] ?> films total</div>
+                </div>
+              </div>
+              <div class="duo-stats">
+                <div class="duo-films"><?= $ad['unique_directors'] ?></div>
+                <div class="duo-revenue">unique directors</div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <p class="text-muted" style="text-align:center; padding:2rem;">No diversity data available.</p>
           <?php endif; ?>
         </div>
       </div>

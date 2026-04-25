@@ -8,6 +8,11 @@ require_once __DIR__ . '/components/utils.php';
 
 $ds = new DataService();
 
+$highestRated = $ds->getHighestRatedOverall(4);
+$profitableDirs = $ds->getMostProfitableDirectors(4);
+$langRatingComp = $ds->getLanguageRatingComparison();
+$yearlyRevTrend = $ds->getYearlyRevenueTrend(2010);
+
 // ── Helper: language code → industry name ─────────────────────────────────────
 function industryName(string $code): string {
     $map = [
@@ -134,7 +139,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Industry Intelligence — Regional Powerhouses</title>
+<title>Platform Statistics — The Cinematic Lens</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -329,9 +334,9 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
         <div class="industry-wrapper">
 
     <!-- Header -->
-    <p class="eyebrow">Industry Intelligence</p>
-    <h1>Regional Powerhouses</h1>
-    <p class="subtitle">A deep-dive into the shifting tectonic plates of Indian cinema, where regional storytelling is redefining global box office benchmarks.</p>
+    <p class="eyebrow">Platform Statistics</p>
+    <h1>Data & Analytics</h1>
+    <p class="subtitle">A deep-dive into the extensive catalog of Indian cinema, highlighting market trends, overall box office performance, and masterpieces over the decades.</p>
 
     <!-- KPI Strip — getTotalMovies, getTotalRevenue, getAvgRating, getMostActiveGenre -->
     <div class="kpi-strip">
@@ -581,6 +586,155 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 
         </div><!-- /col-stack -->
     </div><!-- /row-2 -->
+
+    <!-- Row 3: Unique Stats (Highest Rated + Profitable Directors) -->
+    <div class="row row-11">
+        <!-- Highest Rated Movies overall -->
+        <div class="card">
+            <div class="tbl-header">
+                <div>
+                    <div class="card-title">Highest Rated Masterpieces</div>
+                    <div class="card-sub" style="margin-bottom:0">All-Time Top Rated Films</div>
+                </div>
+            </div>
+            <?php if (!empty($highestRated)): ?>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Director</th>
+                        <th>Year</th>
+                        <th>IMDB</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php
+                $emojis2 = ['⭐','🥇','🏆','🌟'];
+                foreach ($highestRated as $idx => $f):
+                    $rating = (isset($f['rating_imdb']) && $f['rating_imdb'] > 0) ? number_format((float)$f['rating_imdb'], 1) : '—';
+                ?>
+                <tr>
+                    <td>
+                        <div class="film-cell">
+                            <div class="film-thumb" style="background: rgba(249,115,22,0.1); color: var(--orange);"><?= $emojis2[$idx % 4] ?></div>
+                            <div>
+                                <div class="film-name"><?= htmlspecialchars($f['title']) ?></div>
+                                <div class="film-dir" style="color: var(--accent-primary);"><?= htmlspecialchars($f['genre']) ?></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="lang-tag"><?= htmlspecialchars($f['director']) ?></span></td>
+                    <td><span class="rating-val" style="color:var(--text-muted);"><?= $f['release_year'] ?></span></td>
+                    <td>
+                        <span class="star">★</span><span class="rating-val"><?= $rating ?></span>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php else: ?>
+                <p class="no-data">No rated films found.</p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Right column: Most Profitable Directors -->
+        <div class="col-stack">
+            <div class="card" style="height: 100%;">
+                <div class="card-title">Most Profitable Directors</div>
+                <div class="card-sub">Highest Avg Revenue per Film (Min 3 films)</div>
+                <div class="talent-list">
+                <?php foreach ($profitableDirs as $ti => $t): ?>
+                <div class="talent-item">
+                    <div class="talent-avatar" style="border-radius: 50%; border: 2px solid var(--accent-green); background: rgba(74,222,128,0.1); color: var(--accent-green);">💼</div>
+                    <div class="talent-info">
+                        <div class="talent-name" style="font-size: 1.05rem;"><?= htmlspecialchars($t['director']) ?></div>
+                        <div class="talent-meta"><?= $t['movie_count'] ?> Blockbusters</div>
+                    </div>
+                    <span class="talent-badge badge-cyan">₹<?= formatRevenue($t['avg_revenue']) ?> AVG</span>
+                </div>
+                <?php endforeach; ?>
+                <?php if (empty($profitableDirs)): ?>
+                    <p class="no-data">No director data found.</p>
+                <?php endif; ?>
+                </div>
+            </div>
+        </div><!-- /col-stack -->
+    </div><!-- /row-3 -->
+
+    <!-- Row 4: Language Quality Rankings + Yearly Revenue Trend -->
+    <div class="row row-11">
+
+        <!-- Language Quality Rankings -->
+        <div class="card">
+            <div class="card-title">Language Quality Rankings</div>
+            <div class="card-sub">Avg IMDb Rating by Industry (min. 3 films)</div>
+            <?php
+              $lmap2 = ['hi'=>'Bollywood','ta'=>'Kollywood','te'=>'Tollywood','ml'=>'Mollywood','kn'=>'Sandalwood','en'=>'Hollywood'];
+              $maxLR = !empty($langRatingComp) ? max(array_column($langRatingComp, 'avg_rating')) : 10;
+              if ($maxLR == 0) $maxLR = 10;
+            ?>
+            <div class="corr-list">
+            <?php foreach ($langRatingComp as $lrc):
+              $lname2 = $lmap2[strtolower($lrc['language'])] ?? strtoupper($lrc['language']);
+              $pct2 = round(($lrc['avg_rating'] / $maxLR) * 100);
+            ?>
+            <div>
+              <div class="corr-meta">
+                <span class="corr-cat"><?= htmlspecialchars($lname2) ?> <span style="color: var(--muted); font-size: 9px;">(<?= $lrc['movie_count'] ?> films)</span></span>
+                <span class="corr-val">&#x2605; <?= number_format($lrc['avg_rating'], 2) ?> <span style="color:var(--muted)">(peak <?= number_format($lrc['max_rating'],1) ?>)</span></span>
+              </div>
+              <div class="corr-bar-bg">
+                <div class="corr-bar-fill" style="width:<?= $pct2 ?>%"></div>
+              </div>
+            </div>
+            <?php endforeach; ?>
+            <?php if (empty($langRatingComp)): ?>
+              <p class="no-data">No language rating data found.</p>
+            <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Yearly Revenue Trend -->
+        <div class="card">
+            <div class="card-title">Yearly Revenue Trend (2010+)</div>
+            <div class="card-sub">Total Box Office Revenue by Year</div>
+            <?php
+              $maxYRev = !empty($yearlyRevTrend) ? max(array_column($yearlyRevTrend, 'total_revenue')) : 1;
+              if ($maxYRev == 0) $maxYRev = 1;
+            ?>
+            <?php if (!empty($yearlyRevTrend)): ?>
+            <div style="display: flex; align-items: flex-end; gap: 3px; height: 120px; margin-top: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #1f1f27;">
+              <?php foreach ($yearlyRevTrend as $yrt):
+                $barH = max(round(($yrt['total_revenue'] / $maxYRev) * 100), 3);
+              ?>
+              <div style="flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%;" title="<?= $yrt['yr'] ?>: &#x20B9;<?= formatRevenue($yrt['total_revenue']) ?>">
+                <div style="height: <?= $barH ?>%; background: linear-gradient(180deg, #f97316, #fbbf24); border-radius: 3px 3px 0 0; min-height: 3px;"></div>
+              </div>
+              <?php endforeach; ?>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 9px; color: #64647a; margin-top: 6px;">
+              <span><?= $yearlyRevTrend[0]['yr'] ?? '' ?></span>
+              <span><?= end($yearlyRevTrend)['yr'] ?? '' ?></span>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
+              <?php
+                $bestYRT = $yearlyRevTrend[0];
+                foreach ($yearlyRevTrend as $yrt) { if ($yrt['total_revenue'] > $bestYRT['total_revenue']) $bestYRT = $yrt; }
+              ?>
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span style="color: #64647a;">Best Year</span>
+                <span style="color: #f97316; font-weight: 700;"><?= $bestYRT['yr'] ?> &mdash; &#x20B9;<?= formatRevenue($bestYRT['total_revenue']) ?></span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                <span style="color: #64647a;">Total Films (period)</span>
+                <span style="color: #eeeef5; font-weight: 600;"><?= array_sum(array_column($yearlyRevTrend, 'movie_count')) ?> movies</span>
+              </div>
+            </div>
+            <?php else: ?>
+              <p class="no-data">No yearly revenue data found.</p>
+            <?php endif; ?>
+        </div>
+    </div><!-- /row-4 -->
 
         </div><!-- /industry-wrapper -->
         <footer>
