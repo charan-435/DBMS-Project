@@ -80,16 +80,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 typeBg = 'rgba(126,175,232,0.15)';
             } else if (item.type === 'director') {
                 icon = '🎥';
-                href = `${base}explore.php?q=${encodeURIComponent(item.name)}`;
+                href = `${base}director_details.php?id=${item.id}`;
                 typeLabel = 'DIRECTOR';
-                typeBg = 'rgba(92,214,182,0.15)';
-                subMeta = 'View filmography →';
+                typeBg = 'rgba(129, 140, 248, 0.15)';
+                subMeta = 'View career analytics →';
             } else if (item.type === 'actor') {
                 icon = '🎭';
-                href = `${base}explore.php?q=${encodeURIComponent(item.name)}`;
+                href = `${base}actor_details.php?id=${item.id}`;
                 typeLabel = 'ACTOR';
-                typeBg = 'rgba(255,130,150,0.15)';
-                subMeta = 'View movies →';
+                typeBg = 'rgba(52, 211, 153, 0.15)';
+                subMeta = 'View star profile →';
             }
 
             a.href = href;

@@ -1,23 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg-dark: #0f1117;
-  --bg-panel: #1a1b23;
-  --bg-card: #1e1f2a;
-  --bg-card-hover: #252635;
-  --bg-highlight: #2a2b3a;
-  --bg-input: #22232f;
+  --bg-dark: #090a0f;
+  --bg-panel: #11121a;
+  --bg-card: #161722;
+  --bg-card-hover: #1c1e2d;
+  --bg-highlight: #222436;
+  --bg-input: #1a1b26;
 
-  --text-primary: #f0f0f5;
-  --text-secondary: #8b8d9e;
-  --text-muted: #5a5c6e;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1c2;
+  --text-muted: #6b6b8f;
 
-  --accent-primary: #7eafe8;
-  --accent-hover: #98e7f0;
-  --accent-glow: rgba(232, 165, 126, 0.15);
-  --accent-green: #5cd6b6;
-  --accent-green-glow: rgba(92, 214, 182, 0.15);
-  --accent-blue: #6ea8fe;
+  --accent-primary: #818cf8; /* Vibrant Indigo */
+  --accent-hover: #a5b4fc;
+  --accent-glow: rgba(129, 140, 248, 0.12);
+  --accent-green: #34d399;   /* Vibrant Emerald */
+  --accent-green-glow: rgba(52, 211, 153, 0.12);
+  --accent-blue: #38bdf8;    /* Sky Blue */
+  --accent-orange: #fb923c;  /* Warm Orange */
+  --accent-purple: #a78bfa;  /* Soft Purple */
 
   --border-color: rgba(255,255,255,0.06);
   --border-hover: rgba(255,255,255,0.12);
@@ -671,21 +673,21 @@ input, select, button {
 
 .genre-badge {
   display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.genre-drama { background: rgba(138, 100, 255, 0.15); color: #a68dff; }
-.genre-action { background: rgba(232, 165, 126, 0.15); color: var(--accent-primary); }
-.genre-comedy { background: rgba(92, 214, 182, 0.15); color: var(--accent-green); }
-.genre-romance { background: rgba(255, 130, 150, 0.15); color: #ff8296; }
-.genre-thriller { background: rgba(110, 168, 254, 0.15); color: var(--accent-blue); }
-.genre-horror { background: rgba(255, 80, 80, 0.15); color: #ff5050; }
-.genre-crime { background: rgba(255, 200, 50, 0.15); color: #ffc832; }
-.genre-default { background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); }
+.genre-drama { background: rgba(167, 139, 250, 0.15); color: var(--accent-purple); border: 1px solid rgba(167, 139, 250, 0.2); }
+.genre-action { background: rgba(251, 146, 60, 0.15); color: var(--accent-orange); border: 1px solid rgba(251, 146, 60, 0.2); }
+.genre-comedy { background: rgba(52, 211, 153, 0.15); color: var(--accent-green); border: 1px solid rgba(52, 211, 153, 0.2); }
+.genre-romance { background: rgba(251, 113, 133, 0.15); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.2); }
+.genre-thriller { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid rgba(56, 189, 248, 0.2); }
+.genre-horror { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.2); }
+.genre-crime { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); }
+.genre-default { background: rgba(161, 161, 194, 0.1); color: var(--text-secondary); border: 1px solid rgba(161, 161, 194, 0.2); }
 
 .imdb-score {
   display: flex;

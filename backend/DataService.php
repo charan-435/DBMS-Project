@@ -66,17 +66,37 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
+    public function getGenreAverageRevenue($genreId) {
+        if (!$this->conn) return 0;
+        try {
+            $stmt = $this->conn->prepare("SELECT AVG(revenue) as avg FROM Movies WHERE genre_id = :id AND revenue > 0");
+            $stmt->execute(['id' => (int)$genreId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (float)($row['avg'] ?? 0);
+        } catch(PDOException $e) { return 0; }
+    }
+
+    public function getLanguageAverageRevenue($language) {
+        if (!$this->conn) return 0;
+        try {
+            $stmt = $this->conn->prepare("SELECT AVG(revenue) as avg FROM Movies WHERE language = :lang AND revenue > 0");
+            $stmt->execute(['lang' => $language]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return (float)($row['avg'] ?? 0);
+        } catch(PDOException $e) { return 0; }
+    }
+
     public function getTrendingMovies($limit = 5) {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.movie_id, m.title, CONCAT(d.first_name, ' ', d.last_name) as director, 
+                SELECT m.movie_id, m.title, CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id,
                        g.genre_name as genres, m.rating_imdb, m.language, 
                        m.release_year as yr, m.revenue as revenue
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.rating_imdb > 0 
+                WHERE m.rating_imdb > 0 AND d.first_name NOT LIKE '%Unknown%'
                 ORDER BY m.rating_imdb DESC, m.revenue DESC
                 LIMIT :limit
             ");
@@ -86,18 +106,17 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
-    public function getTopDirectors($limit = 10) {
+    public function getTopDirectorsByCount($limit = 10) {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(d.first_name, ' ', d.last_name) as director, COUNT(m.movie_id) as movie_count, 
+                SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director, COUNT(m.movie_id) as movie_count, 
                        AVG(m.rating_imdb) as avg_rating, SUM(m.revenue) as total_revenue
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
-                WHERE m.rating_imdb > 0
+                WHERE m.rating_imdb > 0 AND d.first_name NOT LIKE '%Unknown%'
                 GROUP BY d.director_id 
-                HAVING COUNT(m.movie_id) >= 2
-                ORDER BY avg_rating DESC
+                ORDER BY movie_count DESC
                 LIMIT :limit
             ");
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -106,18 +125,70 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
-    public function getDirectorFilms($director, $limit = 5) {
+    public function getRecentHighRated($limit = 5, $minYear = 2015) {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.title, m.rating_imdb, g.genre_name as genres, m.release_year as yr, m.revenue as revenue
+                SELECT m.movie_id, m.title, m.rating_imdb, m.release_year as yr, 
+                       CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
-                JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE CONCAT(d.first_name, ' ', d.last_name) = :dir AND m.rating_imdb > 0
-                ORDER BY m.rating_imdb DESC LIMIT :limit
+                WHERE m.release_year >= :yr AND m.rating_imdb >= 7.5 AND d.first_name NOT LIKE '%Unknown%'
+                ORDER BY m.rating_imdb DESC, m.release_year DESC
+                LIMIT :limit
             ");
-            $stmt->bindValue(':dir', $director);
+            $stmt->bindValue(':yr', (int)$minYear, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getDirectorDetails($directorId) {
+        if (!$this->conn) return null;
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT d.*, CONCAT(d.first_name, ' ', d.last_name) as name,
+                       COUNT(m.movie_id) as total_films,
+                       AVG(m.rating_imdb) as avg_rating,
+                       SUM(m.revenue) as total_revenue,
+                       MIN(m.release_year) as career_start,
+                       MAX(m.release_year) as career_latest
+                FROM Directors d
+                LEFT JOIN Movies m ON d.director_id = m.director_id
+                WHERE d.director_id = :id
+                GROUP BY d.director_id
+            ");
+            $stmt->execute(['id' => (int)$directorId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return null; }
+    }
+
+    public function getDirectorCareerTrend($directorId) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT title, release_year as yr, revenue, rating_imdb as rating
+                FROM Movies
+                WHERE director_id = :id AND release_year IS NOT NULL
+                ORDER BY release_year ASC
+            ");
+            $stmt->execute(['id' => (int)$directorId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getDirectorFilms($directorId, $limit = 10) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT m.movie_id, m.title, m.rating_imdb, g.genre_name as genres, m.release_year as yr, m.revenue as revenue
+                FROM Movies m
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE m.director_id = :id AND m.rating_imdb > 0
+                ORDER BY m.release_year DESC LIMIT :limit
+            ");
+            $stmt->bindValue(':id', (int)$directorId, PDO::PARAM_INT);
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -133,7 +204,8 @@ class DataService {
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
                 JOIN Actors a ON ma.actor_id = a.actor_id
-                WHERE CONCAT(d.first_name, ' ', d.last_name) = :dir
+                WHERE CONCAT(d.first_name, ' ', d.last_name) = :dir 
+                  AND a.first_name NOT LIKE '%Unknown%'
                 GROUP BY a.actor_id
                 ORDER BY films DESC
                 LIMIT :limit
@@ -184,13 +256,13 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.title, CONCAT(d.first_name, ' ', d.last_name) as director, 
+                SELECT m.movie_id, m.title, CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id,
                        m.revenue as revenue, m.release_year as release_date, 
                        m.rating_imdb, g.genre_name as genres, m.language
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.revenue > 0
+                WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
                 ORDER BY m.revenue DESC LIMIT :limit
             ");
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
@@ -271,7 +343,7 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as name, COUNT(ma.movie_id) as count
+                SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as name, COUNT(ma.movie_id) as count
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
                 WHERE a.first_name NOT LIKE '%Unknown%'
@@ -342,11 +414,12 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.title, m.rating_imdb, m.revenue, m.release_year, CONCAT(d.first_name, ' ', d.last_name) as director, g.genre_name
+                SELECT m.movie_id, m.title, m.rating_imdb, m.revenue, m.release_year, 
+                       CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.rating_imdb >= 8.0 AND m.revenue > 0
+                WHERE m.rating_imdb >= 8.0 AND m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
                 ORDER BY m.revenue ASC
                 LIMIT :limit
             ");
@@ -360,11 +433,12 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.title, m.rating_imdb, m.revenue, m.release_year, CONCAT(d.first_name, ' ', d.last_name) as director, g.genre_name
+                SELECT m.movie_id, m.title, m.rating_imdb, m.revenue, m.release_year, 
+                       CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.rating_imdb < 5.0 AND m.revenue > 0
+                WHERE m.rating_imdb < 5.0 AND m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
                 ORDER BY m.revenue DESC
                 LIMIT :limit
             ");
@@ -398,11 +472,12 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT m.title, m.rating_imdb, m.release_year, CONCAT(d.first_name, ' ', d.last_name) as director, g.genre_name as genre
+                SELECT m.movie_id, m.title, m.rating_imdb, m.release_year, 
+                       CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genre
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.rating_imdb > 0
+                WHERE m.rating_imdb > 0 AND d.first_name NOT LIKE '%Unknown%'
                 ORDER BY m.rating_imdb DESC, m.revenue DESC
                 LIMIT :limit
             ");
@@ -416,7 +491,7 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(d.first_name, ' ', d.last_name) as director, AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count
+                SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director, AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count
                 FROM Directors d
                 JOIN Movies m ON d.director_id = d.director_id
                 WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
@@ -450,26 +525,7 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
-    public function getTopDirectorsByCount($limit = 8) {
-        if (!$this->conn) return [];
-        try {
-            $stmt = $this->conn->prepare("
-                SELECT CONCAT(d.first_name, ' ', d.last_name) as director,
-                       COUNT(m.movie_id) as movie_count,
-                       ROUND(AVG(m.rating_imdb), 2) as avg_rating,
-                       SUM(m.revenue) as total_revenue
-                FROM Directors d
-                JOIN Movies m ON d.director_id = m.director_id
-                WHERE d.first_name NOT LIKE '%Unknown%'
-                GROUP BY d.director_id
-                ORDER BY movie_count DESC
-                LIMIT :limit
-            ");
-            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) { return []; }
-    }
+
 
     public function getLanguageRatingComparison() {
         if (!$this->conn) return [];
@@ -599,26 +655,7 @@ class DataService {
         } catch(PDOException $e) { return []; }
     }
 
-    public function getRecentHighRated($limit = 5, $minYear = 2018) {
-        if (!$this->conn) return [];
-        try {
-            $stmt = $this->conn->prepare("
-                SELECT m.title, m.release_year, m.rating_imdb, m.revenue,
-                       CONCAT(d.first_name, ' ', d.last_name) as director,
-                       g.genre_name
-                FROM Movies m
-                JOIN Directors d ON m.director_id = d.director_id
-                JOIN Genres g ON m.genre_id = g.genre_id
-                WHERE m.release_year >= :yr AND m.rating_imdb >= 7.0
-                ORDER BY m.rating_imdb DESC, m.revenue DESC
-                LIMIT :limit
-            ");
-            $stmt->bindValue(':yr', (int)$minYear, PDO::PARAM_INT);
-            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch(PDOException $e) { return []; }
-    }
+
 
     public function getActorCollaborationCount($limit = 5) {
         if (!$this->conn) return [];
@@ -657,7 +694,7 @@ class DataService {
         $allowedMetrics = ['COUNT', 'SUM', 'AVG', 'MAX', 'MIN'];
         $allowedMetricFields = ['movie_id', 'revenue', 'rating_imdb', 'release_year'];
         $allowedOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
-        $filterableFields = array_merge($allowedDimensions, $allowedMetricFields, ['search']);
+        $filterableFields = array_merge($allowedDimensions, $allowedMetricFields, ['search', 'movie_count']);
         
         if (!in_array($dimension, $allowedDimensions)) $dimension = 'genre_name';
         if (!in_array($metric_func, $allowedMetrics)) $metric_func = 'COUNT';
@@ -666,6 +703,7 @@ class DataService {
         if ($limit < 1 || $limit > 500) $limit = 50;
         
         $whereClauses = [];
+        $havingClauses = [];
         $binds = [];
         
         foreach ($filters as $i => $filter) {
@@ -676,7 +714,9 @@ class DataService {
             if (in_array($f, $filterableFields)) {
                 if (in_array($op, $allowedOperators)) {
                     $paramName = ":p_{$i}";
-                    if ($f === 'search') {
+                    if ($f === 'movie_count') {
+                        $havingClauses[] = "COUNT(DISTINCT movie_id) $op $paramName";
+                    } elseif ($f === 'search') {
                         $whereClauses[] = "(title LIKE $paramName OR director_name LIKE $paramName OR cast_names LIKE $paramName)";
                     } else {
                         $whereClauses[] = "$f $op $paramName";
@@ -691,6 +731,9 @@ class DataService {
             }
         }
         
+        $whereClauses[] = "director_name NOT LIKE '%Unknown%'";
+        $whereClauses[] = "cast_names NOT LIKE '%Unknown%'";
+
         $whereSql = '';
         if (!empty($whereClauses)) {
             $whereSql = "WHERE " . implode(" AND ", $whereClauses);
@@ -706,10 +749,26 @@ class DataService {
             $metricSql = "COUNT(DISTINCT movie_id)";
         }
         
-        $sql = "SELECT $dimension as label, ROUND($metricSql, 2) as value 
+        $extraSelect = "";
+        if ($dimension === 'title' || $dimension === 'movie_id') {
+            $extraSelect = ", MAX(movie_id) as movie_id";
+        } elseif ($dimension === 'director_name') {
+            $extraSelect = ", MAX(director_id) as director_id";
+        } elseif ($dimension === 'cast_names') {
+            // Note: linking for cast_names is best-effort if it's a single name
+            $extraSelect = ", MAX(actor_id) as actor_id";
+        }
+
+        $havingSql = '';
+        if (!empty($havingClauses)) {
+            $havingSql = "HAVING " . implode(" AND ", $havingClauses);
+        }
+        
+        $sql = "SELECT $dimension as label, ROUND($metricSql, 2) as value $extraSelect
                 FROM movie_full_details 
                 $whereSql 
                 $groupBy 
+                $havingSql
                 ORDER BY value $sort_dir 
                 LIMIT $limit";
                 
@@ -771,7 +830,7 @@ class DataService {
         try {
             // Get Movie Info
             $stmt = $this->conn->prepare("
-                SELECT m.*, CONCAT(d.first_name,' ',d.last_name) as director_name, g.genre_name
+                SELECT m.*, CONCAT(d.first_name,' ',d.last_name) as director_name, g.genre_name, m.director_id
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Genres g ON m.genre_id = g.genre_id
@@ -784,7 +843,8 @@ class DataService {
 
             // Get Cast
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as name, a.actor_id
+                SELECT CONCAT(a.first_name, ' ', a.last_name) as name, a.actor_id,
+                       (SELECT COUNT(*) FROM Movie_Actors ma2 WHERE ma2.actor_id = a.actor_id) as movie_count
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
                 WHERE ma.movie_id = :id
@@ -948,7 +1008,7 @@ class DataService {
         if (!$this->conn) return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as actor,
+                SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
                     COUNT(DISTINCT g.genre_id) as genres_count,
                     COUNT(ma.movie_id) as total_films,
                     GROUP_CONCAT(DISTINCT g.genre_name ORDER BY g.genre_name SEPARATOR ', ') as genres
@@ -973,6 +1033,8 @@ class DataService {
         try {
             $stmt = $this->conn->prepare("
                 SELECT
+                    a1.actor_id as actor1_id,
+                    a2.actor_id as actor2_id,
                     CONCAT(a1.first_name,' ',a1.last_name) as actor1,
                     CONCAT(a2.first_name,' ',a2.last_name) as actor2,
                     COUNT(*) as films_together
@@ -992,7 +1054,75 @@ class DataService {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch(PDOException $e) { return []; }
     }
+    public function getDirectorActorCollaboration($directorId, $actorId) {
+        if (!$this->conn) return null;
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT COUNT(*) as films_together, AVG(m.rating_imdb) as avg_rating
+                FROM Movies m
+                JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
+                WHERE m.director_id = :did AND ma.actor_id = :aid
+            ");
+            $stmt->execute(['did' => $directorId, 'aid' => $actorId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return null; }
+    }
+
     // ── EXPLORE TRENDS PAGE ────────────────────────────────────
+
+    public function getActorDetails($actorId) {
+        if (!$this->conn) return null;
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT a.*, CONCAT(a.first_name, ' ', a.last_name) as name,
+                       COUNT(ma.movie_id) as total_films,
+                       AVG(m.rating_imdb) as avg_rating,
+                       SUM(m.revenue) as total_revenue,
+                       MIN(m.release_year) as career_start,
+                       MAX(m.release_year) as career_latest
+                FROM Actors a
+                LEFT JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                LEFT JOIN Movies m ON ma.movie_id = m.movie_id
+                WHERE a.actor_id = :id
+                GROUP BY a.actor_id
+            ");
+            $stmt->execute(['id' => (int)$actorId]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return null; }
+    }
+
+    public function getActorCareerTrend($actorId) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT m.title, m.release_year as yr, m.revenue, m.rating_imdb as rating
+                FROM Movies m
+                JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
+                WHERE ma.actor_id = :id AND m.release_year IS NOT NULL
+                ORDER BY m.release_year ASC
+            ");
+            $stmt->execute(['id' => (int)$actorId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
+
+    public function getActorFilms($actorId, $limit = 10) {
+        if (!$this->conn) return [];
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT m.movie_id, m.title, m.rating_imdb, g.genre_name as genres, m.release_year as yr, m.revenue as revenue
+                FROM Movies m
+                JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE ma.actor_id = :id
+                ORDER BY m.release_year DESC LIMIT :limit
+            ");
+            $stmt->bindValue(':id', (int)$actorId, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch(PDOException $e) { return []; }
+    }
 
     public function getTopActorsDetailed($limit = 12) {
         if (!$this->conn) return [];
@@ -1185,7 +1315,8 @@ class DataService {
                 $stmt = $this->conn->prepare("
                     SELECT director_id as id, CONCAT(first_name, ' ', last_name) as name, '' as meta, 'director' as type 
                     FROM Directors 
-                    WHERE first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q 
+                    WHERE (first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q)
+                      AND first_name NOT LIKE '%Unknown%'
                     LIMIT :limit
                 ");
                 $stmt->bindValue(':q', $q);
@@ -1199,7 +1330,8 @@ class DataService {
                 $stmt = $this->conn->prepare("
                     SELECT actor_id as id, CONCAT(first_name, ' ', last_name) as name, '' as meta, 'actor' as type 
                     FROM Actors 
-                    WHERE first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q 
+                    WHERE (first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q)
+                      AND first_name NOT LIKE '%Unknown%'
                     LIMIT :limit
                 ");
                 $stmt->bindValue(':q', $q);

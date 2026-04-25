@@ -10,16 +10,29 @@ $service = new DataService();
 $movie   = $service->getMovieWithCast($movieId);
 if (!$movie) { die("Movie not found."); }
 
-$directorFilms = $service->getDirectorFilms($movie['director_name'], 7);
+$directorFilms = $service->getDirectorFilms($movie['director_id'], 7);
 $directorStats = $service->getTopDirectorsByCount(200);
 $thisDir = null;
 foreach ($directorStats as $d) {
     if ($d['director'] === $movie['director_name']) { $thisDir = $d; break; }
 }
 
+// Milestone insight
+$filmsBefore = 0;
+$dirCareer = $service->getDirectorCareerTrend($movie['director_id']);
+foreach($dirCareer as $dc) {
+    if ($dc['yr'] < $movie['release_year']) $filmsBefore += $dc['movie_count'];
+    else if ($dc['yr'] == $movie['release_year']) break;
+}
+$nthFilm = $filmsBefore + 1;
+
 $platformAvgRating = $service->getAvgRating();
 $ratingPct  = $movie['rating_imdb'] > 0 ? round(($movie['rating_imdb'] / 10) * 100) : 0;
 $ratingDiff = round($movie['rating_imdb'] - $platformAvgRating, 2);
+
+// Revenue Benchmarks
+$genreAvgRev = $service->getGenreAverageRevenue($movie['genre_id']);
+$langAvgRev  = $service->getLanguageAverageRevenue($movie['language']);
 
 function fmtRev($n) {
     if ($n >= 1e9) return '₹' . number_format($n / 1e9, 1) . 'B';
@@ -31,6 +44,13 @@ function fmtRev($n) {
 if ($movie['revenue'] > 5e9)     { $perfLabel = '🔥 Global Blockbuster'; $perfCls = '#f5c518'; }
 elseif ($movie['revenue'] > 1e9) { $perfLabel = '💎 Commercial Success';  $perfCls = '#5cd6b6'; }
 else                              { $perfLabel = '📈 Steady Performer';     $perfCls = '#7eafe8'; }
+
+// Synergy Insight (Director + Lead Actor)
+$synergy = null;
+if (!empty($movie['cast'])) {
+    $leadActorId = $movie['cast'][0]['actor_id'];
+    $synergy = $service->getDirectorActorCollaboration($movie['director_id'], $leadActorId);
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -60,7 +80,7 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
     position: absolute;
     top: -40%; right: -10%;
     width: 450px; height: 450px;
-    background: radial-gradient(circle, rgba(126,175,232,0.07) 0%, transparent 65%);
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
     pointer-events: none;
   }
   .movie-poster {
@@ -76,8 +96,8 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
   .movie-title { font-size: 2.2rem; font-weight: 800; line-height: 1.15; margin-bottom: 0.75rem; }
   .badge-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
   .badge { padding: 0.28rem 0.75rem; border-radius: 20px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-  .badge-genre { background: rgba(126,175,232,0.12); color: var(--accent-primary); border: 1px solid rgba(126,175,232,0.25); }
-  .badge-lang  { background: rgba(92,214,182,0.12);  color: var(--accent-green);   border: 1px solid rgba(92,214,182,0.25);  }
+  .badge-genre { background: var(--accent-glow); color: var(--accent-primary); border: 1px solid rgba(129, 140, 248, 0.2); }
+  .badge-lang  { background: var(--accent-green-glow);  color: var(--accent-green);   border: 1px solid rgba(52, 211, 153, 0.2);  }
   .badge-year  { background: rgba(255,255,255,0.06); color: var(--text-secondary);  border: 1px solid var(--border-color);    }
 
   /* Rating bar */
@@ -135,6 +155,7 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
     padding: 1.5rem 1.5rem 1.25rem;
     box-sizing: border-box;
     overflow: visible;
+    height: auto;
   }
   .chart-card h4 {
     font-size: 0.75rem;
@@ -206,12 +227,29 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
             </div>
           </div>
 
+          <div class="insights-row">
+            <div class="insight-card-mini">
+              <div class="mini-label">CAREER MILESTONE</div>
+              <div class="mini-val"><?= $nthFilm ?><span style="font-size: 0.8rem; opacity: 0.6;"> film</span></div>
+              <div class="mini-desc">This film marks the <?= $nthFilm ?>-th theatrical release for director <?= htmlspecialchars($movie['director_name']) ?> in our dataset.</div>
+            </div>
+
+            <?php if ($synergy && $synergy['films_together'] > 1): ?>
+            <div class="insight-card-mini" style="border-color: var(--accent-green);">
+              <div class="mini-label">CREATIVE SYNERGY</div>
+              <div class="mini-val"><?= $synergy['films_together'] ?><span style="font-size: 0.8rem; opacity: 0.6;"> collabs</span></div>
+              <div class="mini-desc">This duo (<?= htmlspecialchars($movie['director_name']) ?> &amp; <?= htmlspecialchars($movie['cast'][0]['name']) ?>) averages ★ <?= number_format($synergy['avg_rating'], 1) ?> across their projects.</div>
+            </div>
+            <?php endif; ?>
+          </div>
+
           <p style="color:var(--text-secondary); line-height:1.7; max-width:600px; font-size:0.86rem;">
-            Directed by <a href="movies.php?q=<?= urlencode($movie['director_name']) ?>" style="color:var(--accent-primary); font-weight:700;"><?= htmlspecialchars($movie['director_name']) ?></a>,
-            this <?= htmlspecialchars($movie['genre_name']) ?> production is one of the notable
-            <?= strtoupper($movie['language']) ?> films from <?= $movie['release_year'] ?>.
+            Directed by <a href="director_details.php?id=<?= $movie['director_id'] ?>" style="color:var(--accent-primary); font-weight:700; text-decoration: underline;"><?= htmlspecialchars($movie['director_name']) ?></a>,
+            this <?= htmlspecialchars($movie['genre_name']) ?> production marks the **<?= $nthFilm ?><?= $nthFilm == 1 ? 'st' : ($nthFilm == 2 ? 'nd' : ($nthFilm == 3 ? 'rd' : 'th')) ?>** film in the director's storied career.
             With <?= count($movie['cast']) ?> credited cast members and a box office revenue of <?= fmtRev($movie['revenue']) ?>,
-            the film has earned its place in the <?= strtoupper($movie['language']) ?> cinema landscape.
+            <?php if ($genreAvgRev > 0): ?>
+                the film performed **<?= round(($movie['revenue'] / $genreAvgRev) * 100) ?>%** relative to the genre average.
+            <?php endif; ?>
           </p>
         </div>
       </div>
@@ -244,7 +282,10 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
             <h3>Cast</h3>
             <div class="cast-chips">
               <?php foreach ($movie['cast'] as $actor): ?>
-                <a href="movies.php?q=<?= urlencode($actor['name']) ?>" class="cast-chip"><?= htmlspecialchars($actor['name']) ?></a>
+                <a href="actor_details.php?id=<?= $actor['actor_id'] ?>" class="cast-chip" title="Appeared in <?= $actor['movie_count'] ?> films">
+                  <?= htmlspecialchars($actor['name']) ?>
+                  <span style="font-size: 0.6rem; opacity: 0.7; margin-left: 4px;">(<?= $actor['movie_count'] ?> films)</span>
+                </a>
               <?php endforeach; ?>
               <?php if (empty($movie['cast'])): ?>
                 <p style="color:var(--text-muted); font-size:0.82rem;">No cast information available.</p>
@@ -258,7 +299,7 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
             <?php foreach ($directorFilms as $df): ?>
               <?php if ($df['title'] === $movie['title']) continue; ?>
               <div class="film-row">
-                <a href="movies.php?q=<?= urlencode($df['title']) ?>" class="film-row-title"><?= htmlspecialchars($df['title']) ?></a>
+                <a href="movie_details.php?id=<?= $df['movie_id'] ?>" class="film-row-title"><?= htmlspecialchars($df['title']) ?></a>
                 <span class="film-row-year"><?= $df['yr'] ?></span>
                 <span class="film-row-rating">★ <?= number_format($df['rating_imdb'], 1) ?></span>
               </div>
@@ -289,9 +330,9 @@ else                              { $perfLabel = '📈 Steady Performer';     $p
               </div>
               <?php endif; ?>
 
-              <!-- 3. Revenue bar -->
+              <!-- 3. Revenue Benchmarks -->
               <div class="chart-card">
-                <h4>Revenue Breakdown</h4>
+                <h4>Commercial Performance & Benchmarks</h4>
                 <div class="chart-wrap" id="revenueWrap">
                   <canvas id="revenueChart"></canvas>
                 </div>
@@ -448,30 +489,26 @@ window.addEventListener('load', function () {
         }
     });
 
-    // ── 2. Revenue Breakdown ─────────────────────────────────────────────────
+    // ── 2. Revenue Performance (Logarithmic) ────────────────────────────────
     new Chart(document.getElementById('revenueChart'), {
         type: 'bar',
         data: {
-            labels: ['This Film', '1 Cr', '10 Cr', '100 Cr', '1000 Cr'],
+            labels: ['This Film', 'Genre Avg', 'Industry Avg'],
             datasets: [{
                 data: [
                     Math.max(<?= $movie['revenue'] / 1e7 ?>, 0.1),
-                    1, 10, 100, 1000
+                    Math.max(<?= $genreAvgRev / 1e7 ?>, 0.1),
+                    Math.max(<?= $langAvgRev / 1e7 ?>, 0.1)
                 ],
                 backgroundColor: [
                     'rgba(126,175,232,0.9)',
-                    'rgba(92,214,182,0.3)', 'rgba(92,214,182,0.3)',
-                    'rgba(92,214,182,0.3)', 'rgba(92,214,182,0.3)'
+                    'rgba(166, 141, 255, 0.7)',
+                    'rgba(92, 214, 182, 0.7)'
                 ],
-                borderColor: [
-                    '#7eafe8',
-                    'rgba(92,214,182,0.5)', 'rgba(92,214,182,0.5)',
-                    'rgba(92,214,182,0.5)', 'rgba(92,214,182,0.5)'
-                ],
-                borderWidth: 1,
+                borderWidth: 0,
                 borderRadius: 6,
-                barPercentage: 0.6,
-                categoryPercentage: 0.7,
+                barPercentage: 0.5,
+                categoryPercentage: 0.6,
                 clip: false
             }]
         },
@@ -499,7 +536,7 @@ window.addEventListener('load', function () {
                 y: {
                     type: 'logarithmic',
                     min: 0.1,
-                    grid:  { color: 'rgba(255,255,255,0.07)' },
+                    grid:  {display: false},
                     ticks: {
                         color: '#8b8d9e',
                         font:  { size: 11 },
@@ -536,7 +573,7 @@ window.addEventListener('load', function () {
             this.resize();
         }
     },
-            cutout: '65%',
+            cutout: '70%',
             layout: { padding: 16 },
             plugins: {
                 legend: { display: false },
