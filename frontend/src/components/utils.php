@@ -43,6 +43,7 @@ function getSentiment($rating) {
 
 // Format big revenue numbers into ₹ Cr / K Cr
 function formatRevenue($amount) {
+    if (!$amount || $amount <= 0) return '—';
     $cr = $amount / 10000000;
     if ($cr >= 1000) return number_format($cr / 1000, 1) . 'K Cr';
     return number_format($cr, 1) . ' Cr';

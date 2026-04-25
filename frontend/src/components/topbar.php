@@ -2,22 +2,14 @@
   <div class="topbar-brand">THE CINEMATIC LENS</div>
   <div class="topbar-center">
     
-    <form action="search.php" method="GET" style="display: flex; width: 100%; margin: 0;">
-      <div class="search-bar" style="width: 100%;">
+    <div class="topbar-search-container">
+      <div class="search-input-wrapper">
         <span class="search-icon">&#x1F50D;</span>
-        
-        <input 
-            type="text" 
-            name="q" 
-            placeholder="Search films, directors..." 
-            value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>"
-            required
-            style="width: 100%; border: none; outline: none; background: transparent; color: inherit;"
-        >
-        
-        <button type="submit" style="display: none;"></button>
+        <input type="text" id="global-search" placeholder="Search films, directors..." autocomplete="off">
+        <div id="search-results-dropdown" class="search-dropdown hidden"></div>
       </div>
-    </form>
+    </div>
+    <script src="js/search_live.js"></script>
     
   </div>
 </div>

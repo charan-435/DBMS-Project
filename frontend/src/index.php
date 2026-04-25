@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/components/session.php';
 require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 
@@ -119,7 +120,7 @@ $avatarColors = [
                 </div>
                 <div class="stat-item">
                   <h4>Total Revenue</h4>
-                  <p>$<?= number_format($topDirector['total_revenue'] / 1000000, 1) ?>M</p>
+                  <p>&#x20B9;<?= formatRevenue($topDirector['total_revenue']) ?></p>
                 </div>
                 <div class="stat-item">
                   <h4>Avg Rating</h4>
