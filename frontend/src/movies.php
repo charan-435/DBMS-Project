@@ -273,10 +273,19 @@ $currentYear = date('Y');
         <div class="filter-group" style="min-width:140px;">
           <label>Sort By</label>
           <select id="f-sort">
-            <option value="release_year">Newest First</option>
-            <option value="rating">Highest Rated</option>
-            <option value="revenue">Highest Revenue</option>
-            <option value="title">Title A–Z</option>
+            <option value="release_year">Release Year</option>
+            <option value="rating">IMDb Rating</option>
+            <option value="revenue">Revenue</option>
+            <option value="title">Movie Title</option>
+          </select>
+        </div>
+
+        <!-- Order -->
+        <div class="filter-group" style="min-width:90px;">
+          <label>Order</label>
+          <select id="f-order">
+            <option value="DESC">High to Low</option>
+            <option value="ASC">Low to High</option>
           </select>
         </div>
 
@@ -331,6 +340,7 @@ $currentYear = date('Y');
     const fMinYear   = document.getElementById('f-min-year');
     const fMaxYear   = document.getElementById('f-max-year');
     const fSort      = document.getElementById('f-sort');
+    const fOrder     = document.getElementById('f-order');
     const btnReset   = document.getElementById('btn-reset-filters');
     const tableBody  = document.getElementById('movies-table-body');
     const pagCon     = document.getElementById('pagination-container');
@@ -357,6 +367,7 @@ $currentYear = date('Y');
       if (fMinYear.value)         p.set('min_year',    fMinYear.value);
       if (fMaxYear.value)         p.set('max_year',    fMaxYear.value);
       p.set('sort', fSort.value || 'release_year');
+      p.set('order', fOrder.value || 'DESC');
       return p.toString();
     }
 
@@ -371,6 +382,8 @@ $currentYear = date('Y');
       if (fMaxYear.value)        chips.push({ label: `To ${fMaxYear.value}`,                    clear: () => { fMaxYear.value=''; } });
       if (fSort.value && fSort.value !== 'release_year')
                                  chips.push({ label: `Sort: ${fSort.options[fSort.selectedIndex].text}`, clear: () => { fSort.value='release_year'; } });
+      if (fOrder.value && fOrder.value !== 'DESC')
+                                 chips.push({ label: `Order: ${fOrder.options[fOrder.selectedIndex].text}`, clear: () => { fOrder.value='DESC'; } });
 
       chipsCon.innerHTML = chips.map((c, i) =>
         `<span class="filter-chip" data-chip="${i}">${c.label} <span class="chip-x">✕</span></span>`
@@ -512,7 +525,7 @@ $currentYear = date('Y');
       clearTimeout(dropTimer);   dropTimer   = setTimeout(showDropdown, 300);
     });
 
-    [fGenre, fLang, fMinRating, fSort].forEach(el =>
+    [fGenre, fLang, fMinRating, fSort, fOrder].forEach(el =>
       el.addEventListener('change', () => updateVault(1))
     );
 
@@ -527,7 +540,7 @@ $currentYear = date('Y');
     btnReset.addEventListener('click', () => {
       fSearch.value=''; fGenre.value=''; fLang.value='';
       fMinRating.value=''; fMinYear.value=''; fMaxYear.value='';
-      fSort.value='release_year';
+      fSort.value='release_year'; fOrder.value='DESC';
       updateVault(1);
     });
 
@@ -554,8 +567,20 @@ $currentYear = date('Y');
     `;
     document.head.appendChild(style);
 
-    // ── Initial load ──────────────────────────────────────────────
-    updateVault(1);
+    // ── Initial load (Sync with URL params) ───────────────────────
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search'))     fSearch.value    = urlParams.get('search');
+    if (urlParams.has('q'))          fSearch.value    = urlParams.get('q');
+    if (urlParams.has('genre'))      fGenre.value     = urlParams.get('genre');
+    if (urlParams.has('lang'))       fLang.value      = urlParams.get('lang');
+    if (urlParams.has('min_rating')) fMinRating.value = urlParams.get('min_rating');
+    if (urlParams.has('min_year'))   fMinYear.value   = urlParams.get('min_year');
+    if (urlParams.has('max_year'))   fMaxYear.value   = urlParams.get('max_year');
+    if (urlParams.has('sort'))       fSort.value      = urlParams.get('sort');
+    if (urlParams.has('order'))      fOrder.value     = urlParams.get('order');
+    
+    currentPage = parseInt(urlParams.get('page')) || 1;
+    updateVault(currentPage);
   });
   </script>
 </body>

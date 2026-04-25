@@ -51,14 +51,24 @@ $maxRating= is_numeric($_GET['max_rating'] ?? '') ? (float)$_GET['max_rating'] :
 $minYear  = is_numeric($_GET['min_year']   ?? '') ? (int)$_GET['min_year']     : null;
 $maxYear  = is_numeric($_GET['max_year']   ?? '') ? (int)$_GET['max_year']     : null;
 
-$sortRaw  = $_GET['sort'] ?? 'release_year';
-$sortMap  = [
-    'release_year' => 'm.release_year DESC, m.rating_imdb DESC',
-    'rating'       => 'm.rating_imdb DESC',
-    'revenue'      => 'm.revenue DESC',
-    'title'        => 'm.title ASC',
+$sortRaw  = $_GET['sort']  ?? 'release_year';
+$orderRaw = strtoupper($_GET['order'] ?? 'DESC');
+if (!in_array($orderRaw, ['ASC', 'DESC'])) $orderRaw = 'DESC';
+
+$sortFields = [
+    'release_year' => 'm.release_year',
+    'rating'       => 'm.rating_imdb',
+    'revenue'      => 'm.revenue',
+    'title'        => 'm.title',
 ];
-$orderBy  = $sortMap[$sortRaw] ?? $sortMap['release_year'];
+
+$sortField = $sortFields[$sortRaw] ?? 'm.release_year';
+$orderBy   = "$sortField $orderRaw";
+
+// Secondary sort for consistency
+if ($sortRaw !== 'title') {
+    $orderBy .= ", m.title ASC";
+}
 
 // ─── Build WHERE ──────────────────────────────────────────────────
 $where  = ["d.first_name NOT LIKE '%Unknown%'"];

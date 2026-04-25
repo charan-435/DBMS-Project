@@ -419,7 +419,7 @@ if (!empty($movie['cast'])) {
 
           <div class="info-card">
             <h3>Browse Similar</h3>
-            <a href="movies.php?genre=<?= urlencode($movie['genre_name']) ?>" style="display:block; padding:0.6rem 0; font-size:0.82rem; color:var(--accent-primary); text-decoration:none; border-bottom:1px solid var(--border-color);">🎭 More <?= htmlspecialchars($movie['genre_name']) ?> films →</a>
+            <a href="movies.php?genre=<?= $movie['genre_id'] ?>" style="display:block; padding:0.6rem 0; font-size:0.82rem; color:var(--accent-primary); text-decoration:none; border-bottom:1px solid var(--border-color);">🎭 More <?= htmlspecialchars($movie['genre_name']) ?> films →</a>
             <a href="movies.php?lang=<?= urlencode($movie['language']) ?>" style="display:block; padding:0.6rem 0; font-size:0.82rem; color:var(--accent-green); text-decoration:none; border-bottom:1px solid var(--border-color);">🌍 More <?= strtoupper($movie['language']) ?> films →</a>
             <a href="movies.php?min_year=<?= $movie['release_year'] - 2 ?>&max_year=<?= $movie['release_year'] + 2 ?>" style="display:block; padding:0.6rem 0; font-size:0.82rem; color:var(--text-secondary); text-decoration:none;">📅 Films from <?= $movie['release_year'] - 2 ?>–<?= $movie['release_year'] + 2 ?> →</a>
           </div>

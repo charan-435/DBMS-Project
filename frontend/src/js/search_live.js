@@ -10,14 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!searchInput || !resultsDropdown) return;
 
-    // Dynamically determine base URL to work from any page depth
-    const baseUrl = (function() {
-        const scripts = document.querySelectorAll('script[src*="search_live.js"]');
-        if (scripts.length > 0) {
-            return scripts[0].src.replace(/js\/search_live\.js.*/, '');
-        }
-        return '/';
-    })();
+    // All pages are in the same directory (frontend/src/), so we use relative paths.
+    const baseUrl = '';
 
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
@@ -31,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         debounceTimer = setTimeout(() => {
-            fetch(`${baseUrl}api_search.php?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`)
+            fetch(`${baseUrl}api/search_api.php?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`)
                 .then(response => response.json())
                 .then(data => renderResults(data, baseUrl))
                 .catch(err => console.error('Search error:', err));
