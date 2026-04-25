@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsDropdown.innerHTML = '';
         results.forEach(movie => {
             const item = document.createElement('a');
-            item.href = `search.php?q=${encodeURIComponent(movie.title)}`;
+            item.href = `explore.php?q=${encodeURIComponent(movie.title)}`;
             item.className = 'search-result-item';
             
             item.innerHTML = `

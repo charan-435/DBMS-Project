@@ -449,21 +449,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 
     </div><!-- /row-1 -->
 
-    <!-- Strategic Overtake Banner — derived from $market_shares[0] -->
-    <div class="banner">
-        <div class="banner-icon">📈</div>
-        <div>
-            <div class="banner-title">Strategic Overtake</div>
-            <p class="banner-body">
-                Regional cinema now commands
-                <strong style="color:var(--orange)"><?= $market_shares[0]['pct'] ?? '—' ?>%</strong>
-                of total tracked revenue.
-                <?= htmlspecialchars($market_shares[0]['label'] ?? 'Regional') ?>
-                leads the database with the highest cumulative box office, signalling a structural shift in Indian cinema.
-            </p>
-        </div>
-        <button class="btn">Download<br>Deep-Dive</button>
-    </div>
+ 
 
     <!-- Row 2: Top Films + (Superstars + Rating×Revenue stacked) -->
     <!-- getTopGrossingMovies(20) + getTopActors(4) + getRatingRevenueCorrelation() -->
