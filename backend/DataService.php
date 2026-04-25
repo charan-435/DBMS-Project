@@ -653,10 +653,11 @@ class DataService {
         $filters = $params['filters'] ?? [];
         
         // Whitelists to prevent SQL injection
-        $allowedDimensions = ['release_year', 'genre_name', 'director_name', 'language', 'title', 'movie_id'];
+        $allowedDimensions = ['release_year', 'genre_name', 'director_name', 'cast_names', 'language', 'title', 'movie_id'];
         $allowedMetrics = ['COUNT', 'SUM', 'AVG', 'MAX', 'MIN'];
         $allowedMetricFields = ['movie_id', 'revenue', 'rating_imdb', 'release_year'];
         $allowedOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
+        $filterableFields = array_merge($allowedDimensions, $allowedMetricFields, ['search']);
         
         if (!in_array($dimension, $allowedDimensions)) $dimension = 'genre_name';
         if (!in_array($metric_func, $allowedMetrics)) $metric_func = 'COUNT';
@@ -672,11 +673,16 @@ class DataService {
             $op = strtoupper($filter['operator'] ?? '=');
             $v = $filter['value'] ?? '';
             
-            if (in_array($f, array_merge($allowedDimensions, $allowedMetricFields))) {
+            if (in_array($f, $filterableFields)) {
                 if (in_array($op, $allowedOperators)) {
                     $paramName = ":p_{$i}";
-                    $whereClauses[] = "$f $op $paramName";
-                    if ($op === 'LIKE') {
+                    if ($f === 'search') {
+                        $whereClauses[] = "(title LIKE $paramName OR director_name LIKE $paramName OR cast_names LIKE $paramName)";
+                    } else {
+                        $whereClauses[] = "$f $op $paramName";
+                    }
+
+                    if ($op === 'LIKE' || $f === 'search') {
                         $binds[$paramName] = "%{$v}%";
                     } else {
                         $binds[$paramName] = $v;
@@ -760,12 +766,42 @@ class DataService {
         } catch(PDOException $e) { return null; }
     }
 
+    public function getMovieWithCast($id) {
+        if (!$this->conn) return null;
+        try {
+            // Get Movie Info
+            $stmt = $this->conn->prepare("
+                SELECT m.*, CONCAT(d.first_name,' ',d.last_name) as director_name, g.genre_name
+                FROM Movies m
+                JOIN Directors d ON m.director_id = d.director_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE m.movie_id = :id
+            ");
+            $stmt->execute(['id' => $id]);
+            $movie = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$movie) return null;
+
+            // Get Cast
+            $stmt = $this->conn->prepare("
+                SELECT CONCAT(a.first_name, ' ', a.last_name) as name, a.actor_id
+                FROM Actors a
+                JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                WHERE ma.movie_id = :id
+            ");
+            $stmt->execute(['id' => $id]);
+            $movie['cast'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return $movie;
+        } catch(PDOException $e) { return null; }
+    }
+
     // Insert a new movie
     public function insertMovie($title, $year, $revenue, $language, $rating, $director_id, $genre_id) {
         if (!$this->conn) return false;
         try {
             $stmt = $this->conn->prepare("
-                INSERT INTO Movies (title, release_year, budget, language, rating_imdb, director_id, genre_id)
+                INSERT INTO Movies (title, release_year, revenue, language, rating_imdb, director_id, genre_id)
                 VALUES (:title, :year, :revenue, :lang, :rating, :did, :gid)
             ");
             return $stmt->execute([
@@ -780,7 +816,7 @@ class DataService {
         if (!$this->conn) return false;
         try {
             $stmt = $this->conn->prepare("
-                UPDATE Movies SET title=:title, release_year=:year, budget=:revenue, language=:lang,
+                UPDATE Movies SET title=:title, release_year=:year, revenue=:revenue, language=:lang,
                     rating_imdb=:rating, director_id=:did, genre_id=:gid
                 WHERE movie_id = :id
             ");
@@ -827,7 +863,11 @@ class DataService {
             $params = [];
 
             if (!empty($query)) {
-                $where[] = "m.title LIKE :q";
+                $where[] = "(m.title LIKE :q OR CONCAT(d.first_name, ' ', d.last_name) LIKE :q OR EXISTS (
+                    SELECT 1 FROM Movie_Actors ma 
+                    JOIN Actors a ON ma.actor_id = a.actor_id 
+                    WHERE ma.movie_id = m.movie_id AND CONCAT(a.first_name, ' ', a.last_name) LIKE :q
+                ))";
                 $params['q'] = '%' . $query . '%';
             }
             if (!empty($genre)) {
@@ -863,7 +903,13 @@ class DataService {
             $offset = ($page - 1) * $perPage;
 
             // Count total
-            $countSql = "SELECT COUNT(*) as total FROM Movies m JOIN Genres g ON m.genre_id = g.genre_id WHERE $whereClause";
+            $countSql = "
+                SELECT COUNT(*) as total 
+                FROM Movies m 
+                JOIN Genres g ON m.genre_id = g.genre_id 
+                JOIN Directors d ON m.director_id = d.director_id
+                WHERE $whereClause
+            ";
             $countStmt = $this->conn->prepare($countSql);
             $countStmt->execute($params);
             $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -1112,6 +1158,58 @@ class DataService {
             }
             return null;
         } catch(PDOException $e) { return null; }
+    }
+
+    public function searchEntities($query, $type = 'all', $limit = 5) {
+        if (!$this->conn) return [];
+        $results = [];
+        $q = '%' . $query . '%';
+
+        try {
+            // Search Movies
+            if ($type === 'all' || $type === 'movies') {
+                $stmt = $this->conn->prepare("
+                    SELECT movie_id as id, title as name, release_year as meta, 'movie' as type 
+                    FROM Movies 
+                    WHERE title LIKE :q 
+                    LIMIT :limit
+                ");
+                $stmt->bindValue(':q', $q);
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->execute();
+                $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+            }
+
+            // Search Directors
+            if ($type === 'all' || $type === 'directors') {
+                $stmt = $this->conn->prepare("
+                    SELECT director_id as id, CONCAT(first_name, ' ', last_name) as name, '' as meta, 'director' as type 
+                    FROM Directors 
+                    WHERE first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q 
+                    LIMIT :limit
+                ");
+                $stmt->bindValue(':q', $q);
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->execute();
+                $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+            }
+
+            // Search Actors
+            if ($type === 'all' || $type === 'actors') {
+                $stmt = $this->conn->prepare("
+                    SELECT actor_id as id, CONCAT(first_name, ' ', last_name) as name, '' as meta, 'actor' as type 
+                    FROM Actors 
+                    WHERE first_name LIKE :q OR last_name LIKE :q OR CONCAT(first_name, ' ', last_name) LIKE :q 
+                    LIMIT :limit
+                ");
+                $stmt->bindValue(':q', $q);
+                $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+                $stmt->execute();
+                $results = array_merge($results, $stmt->fetchAll(PDO::FETCH_ASSOC));
+            }
+
+            return $results;
+        } catch (PDOException $e) { return []; }
     }
 }
 ?>

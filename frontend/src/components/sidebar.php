@@ -7,6 +7,9 @@
     <a href="dashboard.php" class="nav-item <?= ($currentPage == 'dashboard.php') ? 'active' : '' ?>">
       Dashboard
     </a>
+    <a href="movies.php" class="nav-item <?= ($currentPage == 'movies.php') ? 'active' : '' ?>">
+      Browse Movies
+    </a>
     <a href="explore.php" class="nav-item <?= ($currentPage == 'explore.php') ? 'active' : '' ?>">
       Explore Data
     </a>
