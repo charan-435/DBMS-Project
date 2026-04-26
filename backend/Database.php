@@ -3,7 +3,7 @@
 class Database {
     private static $host = "localhost";
     private static $db_name = "cinematic_lens_db";
-    private static $username = "roott";
+    private static $username = "root";
     private static $password = "";
     private static $conn = null;
 
