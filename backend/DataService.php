@@ -82,27 +82,27 @@ class DataService
         }
     }
 
-    public function getGenreTrend()
-    {
-        return $this->cachedQuery('genre_trend', function () {
-            if (!$this->conn)
-                return [];
-            try {
-                $stmt = $this->conn->query("
-                    SELECT m.release_year as yr,
-                        SUM(CASE WHEN g.genre_name LIKE '%Action%' THEN 1 ELSE 0 END) as action_count,
-                        SUM(CASE WHEN g.genre_name LIKE '%Romance%' THEN 1 ELSE 0 END) as romance_count
-                    FROM Movies m
-                    JOIN Genres g ON m.genre_id = g.genre_id
-                    WHERE m.release_year >= 2005 AND g.genre_name != 'Unknown'
-                    GROUP BY yr ORDER BY yr ASC
-                ");
-                return $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (PDOException $e) {
-                return [];
-            }
-        });
+   public function getGenreTrend() {
+    if (!$this->conn) return [];
+    try {
+        $stmt = $this->conn->query("
+            SELECT m.release_year as yr,
+
+                SUM(CASE WHEN g.genre_name LIKE '%Action%' THEN 1 ELSE 0 END) as action_count,
+                SUM(CASE WHEN g.genre_name LIKE '%Thriller%' THEN 1 ELSE 0 END) as thriller_count,
+                SUM(CASE WHEN g.genre_name LIKE '%Romance%' THEN 1 ELSE 0 END) as romance_count,
+                SUM(CASE WHEN g.genre_name LIKE '%Comedy%' THEN 1 ELSE 0 END) as comedy_count
+
+            FROM Movies m
+            JOIN Genres g ON m.genre_id = g.genre_id
+            GROUP BY yr
+            ORDER BY yr ASC
+        ");
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch(PDOException $e) {
+        return [];
     }
+}
 
     public function getGenreAverageRevenue($genreId)
     {

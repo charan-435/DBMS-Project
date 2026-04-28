@@ -544,9 +544,21 @@ input, select, button {
   cursor: pointer;
 }
 .bar:hover { opacity: 0.8; transform: scaleY(1.05); transform-origin: bottom; }
-.bar-action { background: linear-gradient(to top, #e8a57e, #f0c9a8); }
-.bar-romance { background: linear-gradient(to top, #5cd6b6, #8de8d2); }
+.bar-thriller {
+  background: linear-gradient(to top, #ff6b6b, #ff9f9f); /* RED */
+}
 
+.bar-action {
+  background: linear-gradient(to top, #f1c40f, #ffe066); /* YELLOW */
+}
+
+.bar-romance {
+  background: linear-gradient(to top, #3498db, #85c1e9); /* BLUE */
+}
+
+.bar-comedy {
+  background: linear-gradient(to top, #2ecc71, #7dcea0); /* GREEN */
+}
 .chart-years {
   display: flex;
   justify-content: space-between;

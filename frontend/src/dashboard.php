@@ -51,10 +51,7 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         <p class="hero-desc">
           Tracing the soul of Indian storytelling through two decades of metadata, box office triumphs, and the eternal clash of Action vs. Romance.
         </p>
-        <div class="hero-actions">
-          <a href="genres.php" class="btn-accent">Explore Trends &#x2197;</a>
-          <a href="industry.php" class="btn-outline">Regional Insights</a>
-        </div>
+        
       </div>
 
       <!-- STAT CARDS -->
@@ -129,15 +126,18 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
       </div>
 
       <!-- MIDDLE ROW: Chart + Editorial -->
-      <div class="middle-row">
+      <div class="card" style="margin-top: 1.5rem; width: 100%;">
         <!-- Bar Chart -->
         <div class="card">
           <div class="chart-label">PRODUCTION VELOCITY</div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
             <div class="chart-title">20-Year Trend: Action vs. Romance</div>
             <div class="chart-legend">
-              <div class="legend-item"><span class="legend-dot" style="background: var(--accent-primary);"></span> Action</div>
-              <div class="legend-item"><span class="legend-dot" style="background: var(--accent-green);"></span> Romance</div>
+              
+              <div class="legend-item"><span class="legend-dot" style="background: #f1c40f;"></span> Action</div>
+<div class="legend-item"><span class="legend-dot" style="background: #e74c3c;"></span> Thriller</div>
+<div class="legend-item"><span class="legend-dot" style="background: #3498db;"></span> Romance</div>
+<div class="legend-item"><span class="legend-dot" style="background: #2ecc71;"></span> Comedy</div>
             </div>
           </div>
 
@@ -152,8 +152,11 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             $years = array_keys($chartData);
             if (empty($years)) $years = [2006, 2008, 2010, 2012, 2014, 2016];
             $maxAction = max(array_column($genreTrend ?: [['action_count' => 1]], 'action_count'));
-            $maxRomance = max(array_column($genreTrend ?: [['romance_count' => 1]], 'romance_count'));
-            $maxVal = max($maxAction, $maxRomance, 1);
+$maxThriller = max(array_column($genreTrend ?: [['thriller_count' => 1]], 'thriller_count'));
+$maxRomance = max(array_column($genreTrend ?: [['romance_count' => 1]], 'romance_count'));
+$maxComedy = max(array_column($genreTrend ?: [['comedy_count' => 1]], 'comedy_count'));
+
+$maxVal = max($maxAction, $maxThriller, $maxRomance, $maxComedy, 1);
           ?>
 
           <div style="display: flex; gap: 12px;">
@@ -165,12 +168,16 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <div style="flex: 1;">
               <div class="bar-chart">
                 <?php foreach ($chartData as $yr => $data): 
-                  $actionH = round(($data['action_count'] / $maxVal) * 100);
-                  $romanceH = round(($data['romance_count'] / $maxVal) * 100);
+                  $actionH   = round(($data['action_count'] / $maxVal) * 100);
+$thrillerH = round(($data['thriller_count'] / $maxVal) * 100);
+$romanceH  = round(($data['romance_count'] / $maxVal) * 100);
+$comedyH   = round(($data['comedy_count'] / $maxVal) * 100);
                 ?>
                   <div class="bar-group" title="<?= $yr ?>: Action (<?= $data['action_count'] ?>), Romance (<?= $data['romance_count'] ?>)">
                     <div class="bar bar-action" style="height: <?= max($actionH, 3) ?>%;"></div>
-                    <div class="bar bar-romance" style="height: <?= max($romanceH, 3) ?>%;"></div>
+<div class="bar bar-thriller" style="height: <?= max($thrillerH, 3) ?>%;"></div>
+<div class="bar bar-romance" style="height: <?= max($romanceH, 3) ?>%;"></div>
+<div class="bar bar-comedy" style="height: <?= max($comedyH, 3) ?>%;"></div>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -187,8 +194,14 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             </div>
           </div>
         </div>
+ </div>
+     
 
-        <!-- Trending Movies List -->
+      <!-- BOTTOM ROW: Directors Leaderboard + Recent Acclaimed -->
+      <div class="middle-row" style="margin-top: 1.5rem;">
+
+        <!-- Top Directors by Film Count -->
+          <!-- Trending Movies List -->
         <div class="card" style="display: flex; flex-direction: column;">
           <div class="chart-label">BOX OFFICE HOTSTREAK</div>
           <div class="chart-title" style="margin-bottom: 1rem;">Trending Blockbusters</div>
@@ -221,31 +234,7 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <a href="movies.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
           </div>
         </div>
-      </div>
-
-      <!-- BOTTOM ROW: Directors Leaderboard + Recent Acclaimed -->
-      <div class="middle-row" style="margin-top: 1.5rem;">
-
-        <!-- Top Directors by Film Count -->
-        <div class="card">
-          <div class="chart-label">DIRECTOR LEADERBOARD</div>
-          <div class="chart-title" style="margin-bottom: 1rem;">Most Prolific Directors</div>
-          <div style="display: flex; flex-direction: column; gap: 0.7rem;">
-            <?php foreach ($topDirsByCount as $di => $d): ?>
-            <div style="display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.65rem; border-bottom: 1px solid var(--border-color);">
-              <div style="font-size: 1rem; font-weight: 800; color: var(--accent-primary); min-width: 24px; text-align: center;"><?= $di + 1 ?></div>
-              <div style="flex: 1;">
-                <div style="font-weight: 700; font-size: 0.9rem;">
-                  <a href="director_details.php?id=<?= $d['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($d['director']) ?></a>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary);"><?= $d['movie_count'] ?> films &bull; &#x2605; <?= number_format($d['avg_rating'], 1) ?> avg</div>
-              </div>
-              <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-green);">&#x20B9;<?= formatRevenue($d['total_revenue']) ?></div>
-            </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-
+        
         <!-- Recent Critically Acclaimed -->
         <div class="card">
           <div class="chart-label">RECENT GEMS</div>
