@@ -4,8 +4,16 @@
     
     <div class="topbar-search-container">
       <div class="search-input-wrapper">
-        <span class="search-icon">&#x1F50D;</span>
-        <input type="text" id="global-search" placeholder="Search films, directors..." autocomplete="off">
+        <select id="search-type" class="search-type-select">
+          <option value="all">All</option>
+          <option value="movies">Movies</option>
+          <option value="directors">Directors</option>
+          <option value="actors">Actors</option>
+        </select>
+        <div class="search-field-wrap">
+          <span class="search-icon">&#x1F50D;</span>
+          <input type="text" id="global-search" placeholder="Search films, directors, actors..." autocomplete="off">
+        </div>
         <div id="search-results-dropdown" class="search-dropdown hidden"></div>
       </div>
     </div>

@@ -27,10 +27,10 @@ class Database {
                 
             } catch(PDOException $exception) {
                 error_log("Database Connection Error: " . $exception->getMessage());
-                die("Database Connection Error: " . $exception->getMessage());
+                throw new Exception("Database Connection Error: " . $exception->getMessage());
             }
         }
         return self::$conn;
     }
 }
-?>
+

@@ -30,23 +30,23 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
   <link rel="stylesheet" href="css/style.css">
   <style>
     .insight-card { display: flex; flex-direction: column; height: 100%; }
-    .q-number { font-size: 0.8rem; font-weight: 800; color: var(--accent-primary); letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-    .q-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3; }
-    .q-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; flex: 1; }
-    .a-content { background: var(--bg-dark); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
+    .q-number { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.12em; margin-bottom: 0.6rem; text-transform: uppercase; }
+    .q-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q-desc { font-size: 1.15rem; color: var(--accent-primary); margin-bottom: 1.5rem; flex: 1; line-height: 1.45; font-weight: 700; }
+    .a-content { background: rgba(0, 0, 0, 0.3); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); }
     
-    .big-stat { font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 0.25rem; }
-    .big-stat-sub { font-size: 0.75rem; color: var(--accent-green); }
+    .big-stat { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-bottom: 0.25rem; }
+    .big-stat-sub { font-size: 0.75rem; color: var(--accent-green); font-weight: 600; }
 
     .mini-table { width: 100%; border-collapse: collapse; }
-    .mini-table th { text-align: left; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
-    .mini-table td { padding: 0.5rem 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border-color); }
+    .mini-table th { text-align: left; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; padding-bottom: 0.6rem; border-bottom: 1px solid var(--border-color); letter-spacing: 0.05em; }
+    .mini-table td { padding: 0.6rem 0; font-size: 0.85rem; border-bottom: 1px dashed var(--border-color); }
     .mini-table tr:last-child td { border-bottom: none; }
 
     /* Layout & Mask Fix */
     .insights-grid { 
         display: grid; 
-        grid-template-columns: repeat(2, 1fr); 
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
         gap: 1.5rem; 
         margin-bottom: 2rem;
     }
@@ -58,10 +58,11 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     /* Card Consistency */
     .insight-card .a-content { 
-        background: rgba(15, 17, 23, 0.6) !important;
-        backdrop-filter: blur(8px);
+        background: rgba(17, 18, 26, 0.6) !important;
+        backdrop-filter: blur(12px);
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -89,12 +90,19 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="a-content">
             <table class="mini-table">
               <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
-              <?php foreach ($flopMasterpieces as $fm): ?>
-              <tr>
-                <td style="font-weight: 600;"><?= htmlspecialchars($fm['title']) ?><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($fm['rating_imdb'], 1) ?></span></td>
-                <td style="text-align:right; color: #ef4444;">&#x20B9;<?= formatRevenue($fm['revenue']) ?></td>
-              </tr>
-              <?php endforeach; ?>
+               <?php foreach ($flopMasterpieces as $fm): ?>
+               <tr>
+                 <td style="font-weight: 600;">
+                   <a href="movie_details.php?id=<?= $fm['movie_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($fm['title']) ?></a>
+                   <br>
+                   <span style="color:var(--text-secondary); font-size: 0.7rem;">
+                     Directed by <a href="director_details.php?id=<?= $fm['director_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($fm['director']) ?></a>
+                     • ★ <?= number_format($fm['rating_imdb'], 1) ?>
+                   </span>
+                 </td>
+                 <td style="text-align:right; color: #ef4444;">₹<?= formatRevenue($fm['revenue']) ?></td>
+               </tr>
+               <?php endforeach; ?>
             </table>
           </div>
         </div>
@@ -107,12 +115,19 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="a-content">
             <table class="mini-table">
               <tr><th>Movie</th><th style="text-align:right;">Revenue</th></tr>
-              <?php foreach ($disasters as $cd): ?>
-              <tr>
-                <td style="font-weight: 600;"><?= htmlspecialchars($cd['title']) ?><br><span style="color:var(--text-secondary); font-size: 0.7rem;">★ <?= number_format($cd['rating_imdb'], 1) ?></span></td>
-                <td style="text-align:right; color: var(--accent-green); font-weight: bold;">&#x20B9;<?= formatRevenue($cd['revenue']) ?></td>
-              </tr>
-              <?php endforeach; ?>
+               <?php foreach ($disasters as $cd): ?>
+               <tr>
+                 <td style="font-weight: 600;">
+                   <a href="movie_details.php?id=<?= $cd['movie_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($cd['title']) ?></a>
+                   <br>
+                   <span style="color:var(--text-secondary); font-size: 0.7rem;">
+                     Directed by <a href="director_details.php?id=<?= $cd['director_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($cd['director']) ?></a>
+                     • ★ <?= number_format($cd['rating_imdb'], 1) ?>
+                   </span>
+                 </td>
+                 <td style="text-align:right; color: var(--accent-green); font-weight: bold;">&#x20B9;<?= formatRevenue($cd['revenue']) ?></td>
+               </tr>
+               <?php endforeach; ?>
             </table>
           </div>
         </div>
@@ -170,12 +185,14 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="a-content">
             <table class="mini-table">
               <tr><th>Actor</th><th style="text-align:right;">Genres</th></tr>
-              <?php foreach ($versatileActors as $va): ?>
-              <tr>
-                <td style="font-weight: 600;"><?= htmlspecialchars($va['actor']) ?></td>
-                <td style="text-align:right;"><span class="sentiment-badge sentiment-high"><?= $va['genres_count'] ?> Genres</span></td>
-              </tr>
-              <?php endforeach; ?>
+               <?php foreach ($versatileActors as $va): ?>
+               <tr>
+                 <td style="font-weight: 600;">
+                   <a href="actor_details.php?id=<?= $va['actor_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($va['actor']) ?></a>
+                 </td>
+                 <td style="text-align:right;"><span class="sentiment-badge sentiment-high"><?= $va['genres_count'] ?> Genres</span></td>
+               </tr>
+               <?php endforeach; ?>
             </table>
           </div>
         </div>
@@ -187,13 +204,17 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="q-desc">Which actor duos are the most frequent collaborators on screen?</div>
           <div class="a-content">
             <?php foreach ($actorDuos as $ad): ?>
-              <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.5rem 0; border-bottom: 1px dashed var(--border-color);">
-                <div style="font-size: 0.8rem;">
-                  <span style="font-weight:600;"><?= htmlspecialchars($ad['actor1']) ?></span>
-                  <span style="color:var(--text-muted); margin: 0 4px;">&</span>
-                  <span style="font-weight:600;"><?= htmlspecialchars($ad['actor2']) ?></span>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:0.8rem; border-bottom:1px solid var(--border-color);">
+                <div>
+                  <div style="font-weight:700; font-size:0.9rem;">
+                    <a href="actor_details.php?id=<?= $ad['actor1_id'] ?>" style="color:var(--text-primary); text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($ad['actor1']) ?></a>
+                    <span style="color:var(--text-muted); margin: 0 4px;">&</span>
+                    <a href="actor_details.php?id=<?= $ad['actor2_id'] ?>" style="color:var(--text-primary); text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($ad['actor2']) ?></a>
+                  </div>
                 </div>
-                <span class="text-green font-bold" style="font-size: 0.8rem;"><?= $ad['films_together'] ?> Films</span>
+                <div style="text-align:right;">
+                  <div class="text-green font-bold" style="font-size: 0.8rem;"><?= $ad['films_together'] ?> Films</div>
+                </div>
               </div>
             <?php endforeach; ?>
           </div>
@@ -206,27 +227,17 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
           
           <?php
-            $chartData = [];
-            foreach ($genreTrend as $row) { $chartData[(int)$row['yr']] = $row; }
-            $maxAction = max(array_column($genreTrend ?: [['action_count' => 1]], 'action_count'));
-            $maxRomance = max(array_column($genreTrend ?: [['romance_count' => 1]], 'romance_count'));
-            $maxVal = max($maxAction, $maxRomance, 1);
+            $trendYears = [];
+            $actionCounts = [];
+            $romanceCounts = [];
+            foreach ($genreTrend as $row) { 
+                $trendYears[] = (int)$row['yr'];
+                $actionCounts[] = (int)$row['action_count'];
+                $romanceCounts[] = (int)$row['romance_count'];
+            }
           ?>
-          <div style="height: 150px; display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 1rem;">
-            <?php foreach ($chartData as $yr => $data): 
-              $ah = max(round(($data['action_count'] / $maxVal) * 100), 1);
-              $rh = max(round(($data['romance_count'] / $maxVal) * 100), 1);
-            ?>
-              <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; gap:2px; height:100%; position:relative;" title="<?= $yr ?>">
-                 <div style="display:flex; gap:2px; align-items:flex-end; height:100%;">
-                    <div style="flex:1; background: var(--accent-primary); height: <?= $ah ?>%; border-radius: 2px 2px 0 0;"></div>
-                    <div style="flex:1; background: var(--accent-green); height: <?= $rh ?>%; border-radius: 2px 2px 0 0;"></div>
-                 </div>
-              </div>
-            <?php endforeach; ?>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-top:0.5rem; text-transform:uppercase;">
-            <span>EACH BAR PAIR REPRESENTS ONE YEAR (ACTION = ORANGE, ROMANCE = GREEN)</span>
+          <div style="height: 300px; margin-top: 1rem;">
+             <canvas id="genreTrendChart"></canvas>
           </div>
         </div>
 
@@ -295,5 +306,75 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     </div>
   </main>
+
+  <script>
+    window.addEventListener('load', function() {
+        const ctx = document.getElementById('genreTrendChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode($trendYears) ?>,
+                datasets: [
+                    {
+                        label: 'Action',
+                        data: <?= json_encode($actionCounts) ?>,
+                        backgroundColor: 'rgba(245, 197, 24, 0.85)', // IMDb Yellow/Orange
+                        borderColor: '#f5c518',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Romance',
+                        data: <?= json_encode($romanceCounts) ?>,
+                        backgroundColor: 'rgba(92, 214, 182, 0.85)', // accent-green
+                        borderColor: '#5cd6b6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#8b8d9e',
+                            font: { size: 11, weight: 'bold' },
+                            usePointStyle: true,
+                            padding: 15
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e1f2a',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        titleColor: '#f0f0f5',
+                        bodyColor: '#8b8d9e',
+                        padding: 10
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: '#8b8d9e', 
+                            font: { size: 10 },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8b8d9e', font: { size: 10 } },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+  </script>
 </body>
 </html>

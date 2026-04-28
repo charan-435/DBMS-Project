@@ -4,7 +4,7 @@ require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
-$top10Directors = $service->getTopDirectors(10);
+$top10Directors = $service->getTopDirectorsByCount(10);
 $auteurs = array_slice($top10Directors, 0, 4);
 
 // Fallback
@@ -182,7 +182,7 @@ $avatarColors = [
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2025. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
+      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
 </body>

@@ -8,10 +8,18 @@ require_once __DIR__ . '/components/utils.php';
 
 $ds = new DataService();
 
-$highestRated = $ds->getHighestRatedOverall(4);
+// ── Optimized Data Fetching ──────────────────────────────────────────────────
+$industryKPIs  = $ds->getIndustryKPIData();
+$totalMovies   = $industryKPIs['total_movies'] ?? 0;
+$totalRevenue  = $industryKPIs['total_revenue'] ?? 0;
+$avgRating     = $industryKPIs['avg_rating'] ?? 0;
+$topGenre      = $industryKPIs['top_genre'] ?? ['genre' => 'Unknown', 'count' => 0];
+
+$highestRated   = $ds->getHighestRatedOverall(4);
 $profitableDirs = $ds->getMostProfitableDirectors(4);
 $langRatingComp = $ds->getLanguageRatingComparison();
 $yearlyRevTrend = $ds->getYearlyRevenueTrend(2010);
+$top_films      = $ds->getTopRegionalMovies(5);
 
 // ── Helper: language code → industry name ─────────────────────────────────────
 function industryName(string $code): string {
@@ -22,16 +30,13 @@ function industryName(string $code): string {
     return $map[strtolower(trim($code))] ?? strtoupper($code);
 }
 
-// ── 1. KPI bar ────────────────────────────────────────────────────────────────
-$totalRevenue = $ds->getTotalRevenue();
-$totalMovies  = $ds->getTotalMovies();
-$avgRating    = $ds->getAvgRating();
-$topGenre     = $ds->getMostActiveGenre();
+// Already fetched in combined KPI call above
+
 
 // ── 2. Market Share donut ─────────────────────────────────────────────────────
 $langStats    = $ds->getLanguageStats(6);
 $grandTotal   = array_sum(array_column($langStats, 'total_revenue')) ?: 1;
-$donutColors  = ['#f97316', '#22d3ee', '#6b7280', '#4ade80', '#a78bfa', '#f87171'];
+$donutColors  = ['#818cf8', '#34d399', '#fb923c', '#38bdf8', '#a78bfa', '#fb7185'];
 $market_shares = [];
 $othersTotal  = 0;
 
@@ -72,14 +77,8 @@ ksort($trend);
 $trend_years = array_keys($trend);
 $trend_empty = count($trend) === 0;
 
-// ── 4. Top Regional Films (non-Hindi, from getTopGrossingMovies) ──────────────
-$allTopMovies = $ds->getTopGrossingMovies(20);
-$top_films    = [];
-foreach ($allTopMovies as $row) {
-    if (strtolower(trim($row['language'] ?? '')) === 'hi') continue;
-    $top_films[] = $row;
-    if (count($top_films) >= 5) break;
-}
+// Already fetched via getTopRegionalMovies() optimized call
+
 
 // ── 5. Regional Superstars ────────────────────────────────────────────────────
 $topActors = $ds->getTopActors(4);
@@ -148,16 +147,16 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 
 /* Page header */
 .industry-wrapper .eyebrow {
-    font-size: 10px; letter-spacing: .18em; color: #64647a;
+    font-size: 10px; letter-spacing: .18em; color: var(--text-muted);
     text-transform: uppercase; display: flex; align-items: center; gap: 8px;
     margin-bottom: 8px;
 }
-.industry-wrapper .eyebrow::before { content: ''; width: 24px; height: 2px; background: #f97316; }
+.industry-wrapper .eyebrow::before { content: ''; width: 24px; height: 2px; background: var(--accent-primary); }
 .industry-wrapper h1 {
     font-family: 'Bebas Neue', sans-serif;
     font-size: clamp(32px, 4vw, 52px);
     letter-spacing: .01em; line-height: .95;
-    margin-bottom: 12px; color: #eeeef5;
+    margin-bottom: 12px; color: var(--text-primary);
 }
 .industry-wrapper .subtitle { color: #64647a; font-size: 13px; line-height: 1.65; max-width: 500px; margin-bottom: 28px; }
 
@@ -202,27 +201,27 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 
 /* Card */
 .industry-wrapper .card {
-    background: #111115 !important; border: 1px solid #1f1f27 !important;
+    background: var(--bg-card) !important; border: 1px solid var(--border-color) !important;
     border-radius: 14px !important; padding: 22px 24px !important;
     position: relative; overflow: hidden;
     animation: indFadeUp .45s ease both;
 }
 .industry-wrapper .card::before {
     content: ''; position: absolute; inset: 0;
-    background: radial-gradient(ellipse 55% 35% at 85% 5%, rgba(249,115,22,.042) 0%, transparent 65%);
+    background: radial-gradient(ellipse 55% 35% at 85% 5%, var(--accent-glow) 0%, transparent 65%);
     pointer-events: none;
 }
-.industry-wrapper .card:hover { border-color: #28282f !important; }
-.industry-wrapper .card-title { font-size: 15px; font-weight: 600; margin-bottom: 3px; color: #eeeef5; }
-.industry-wrapper .card-sub { font-size: 9px; letter-spacing: .13em; color: #64647a; text-transform: uppercase; margin-bottom: 20px; }
+.industry-wrapper .card:hover { border-color: var(--border-hover) !important; }
+.industry-wrapper .card-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; color: var(--text-primary); }
+.industry-wrapper .card-sub { font-size: 9px; letter-spacing: .13em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 20px; }
 .industry-wrapper .live-badge {
     position: absolute; top: 20px; right: 20px;
     display: flex; align-items: center; gap: 4px;
-    font-size: 8px; letter-spacing: .1em; color: #4ade80; text-transform: uppercase;
+    font-size: 8px; letter-spacing: .1em; color: var(--accent-green); text-transform: uppercase;
 }
 .industry-wrapper .live-badge::before {
     content: ''; width: 5px; height: 5px; border-radius: 50%;
-    background: #4ade80; animation: indPulse 2s infinite;
+    background: var(--accent-green); animation: indPulse 2s infinite;
 }
 
 /* Donut */
@@ -414,7 +413,8 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
             $xFor = fn(int $i): float => $pad + ($i / ($n - 1)) * ($sw - $pad * 2);
             ?>
             <svg class="chart-svg" viewBox="0 0 <?= $sw ?> <?= $sh ?>" height="160" preserveAspectRatio="none">
-                <?php foreach ([.25, .5, .75, 1] as $g): ?>
+                <?php foreach ([0, .5, 1] as $g): ?>
+                <text x="<?= $pad - 6 ?>" y="<?= $sh - $pad - $g * ($sh - $pad*2) + 3 ?>" text-anchor="end" style="font-size: 8px; fill: #64647a; font-family: 'DM Mono', monospace;"><?= round($g * $max_trend) ?></text>
                 <line x1="<?= $pad ?>" y1="<?= $sh - $pad - $g * ($sh - $pad*2) ?>"
                       x2="<?= $sw - $pad ?>" y2="<?= $sh - $pad - $g * ($sh - $pad*2) ?>"
                       stroke="#1a1a22" stroke-width="1"/>
@@ -449,21 +449,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
 
     </div><!-- /row-1 -->
 
-    <!-- Strategic Overtake Banner — derived from $market_shares[0] -->
-    <div class="banner">
-        <div class="banner-icon">📈</div>
-        <div>
-            <div class="banner-title">Strategic Overtake</div>
-            <p class="banner-body">
-                Regional cinema now commands
-                <strong style="color:var(--orange)"><?= $market_shares[0]['pct'] ?? '—' ?>%</strong>
-                of total tracked revenue.
-                <?= htmlspecialchars($market_shares[0]['label'] ?? 'Regional') ?>
-                leads the database with the highest cumulative box office, signalling a structural shift in Indian cinema.
-            </p>
-        </div>
-        <button class="btn">Download<br>Deep-Dive</button>
-    </div>
+ 
 
     <!-- Row 2: Top Films + (Superstars + Rating×Revenue stacked) -->
     <!-- getTopGrossingMovies(20) + getTopActors(4) + getRatingRevenueCorrelation() -->
@@ -505,8 +491,8 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                         <div class="film-cell">
                             <div class="film-thumb"><?= $emojis[$idx % 5] ?></div>
                             <div>
-                                <div class="film-name"><?= htmlspecialchars($f['title']) ?></div>
-                                <div class="film-dir"><?= htmlspecialchars($f['director'] ?? '') ?></div>
+                                <div class="film-name"><a href="movie_details.php?id=<?= $f['movie_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($f['title']) ?></a></div>
+                                <div class="film-dir"><a href="director_details.php?id=<?= $f['director_id'] ?>" style="color:var(--text-muted); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($f['director'] ?? '') ?></a></div>
                             </div>
                         </div>
                     </td>
@@ -544,7 +530,7 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                 <div class="talent-item">
                     <div class="talent-avatar"><?= $avatars[$ti % 4] ?></div>
                     <div class="talent-info">
-                        <div class="talent-name"><?= htmlspecialchars($t['name']) ?></div>
+                        <div class="talent-name"><a href="actor_details.php?id=<?= $t['actor_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($t['name']) ?></a></div>
                         <div class="talent-meta"><?= number_format($t['count']) ?> films in DB</div>
                     </div>
                     <span class="talent-badge <?= $badge['cls'] ?>"><?= $badge['tag'] ?></span>
@@ -618,16 +604,14 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                         <div class="film-cell">
                             <div class="film-thumb" style="background: rgba(249,115,22,0.1); color: var(--orange);"><?= $emojis2[$idx % 4] ?></div>
                             <div>
-                                <div class="film-name"><?= htmlspecialchars($f['title']) ?></div>
+                                <div class="film-name"><a href="movie_details.php?id=<?= $f['movie_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($f['title']) ?></a></div>
                                 <div class="film-dir" style="color: var(--accent-primary);"><?= htmlspecialchars($f['genre']) ?></div>
                             </div>
                         </div>
                     </td>
-                    <td><span class="lang-tag"><?= htmlspecialchars($f['director']) ?></span></td>
-                    <td><span class="rating-val" style="color:var(--text-muted);"><?= $f['release_year'] ?></span></td>
-                    <td>
-                        <span class="star">★</span><span class="rating-val"><?= $rating ?></span>
-                    </td>
+                    <td><a href="director_details.php?id=<?= $f['director_id'] ?>" style="color:var(--text-muted); text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($f['director']) ?></a></td>
+                    <td><?= $f['release_year'] ?></td>
+                    <td><span class="star">★</span><span class="rating-val"><?= $rating ?></span></td>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -643,14 +627,16 @@ $romance_pts = chartPoints($romance_arr, $max_trend);
                 <div class="card-title">Most Profitable Directors</div>
                 <div class="card-sub">Highest Avg Revenue per Film (Min 3 films)</div>
                 <div class="talent-list">
-                <?php foreach ($profitableDirs as $ti => $t): ?>
+                <?php 
+                $emojis3 = ['💼','🚀','💰','📈'];
+                foreach ($profitableDirs as $idx => $d): ?>
                 <div class="talent-item">
-                    <div class="talent-avatar" style="border-radius: 50%; border: 2px solid var(--accent-green); background: rgba(74,222,128,0.1); color: var(--accent-green);">💼</div>
+                    <div class="talent-avatar" style="border-radius: 50%; border: 2px solid var(--accent-green); background: rgba(74,222,128,0.1); color: var(--accent-green);"><?= $emojis3[$idx % 4] ?></div>
                     <div class="talent-info">
-                        <div class="talent-name" style="font-size: 1.05rem;"><?= htmlspecialchars($t['director']) ?></div>
-                        <div class="talent-meta"><?= $t['movie_count'] ?> Blockbusters</div>
+                        <div class="talent-name" style="font-size: 1.05rem;"><a href="director_details.php?id=<?= $d['director_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($d['director']) ?></a></div>
+                        <div class="talent-meta">₹<?= formatRevenue($d['avg_revenue']) ?> / film</div>
                     </div>
-                    <span class="talent-badge badge-cyan">₹<?= formatRevenue($t['avg_revenue']) ?> AVG</span>
+                    <span class="talent-badge badge-cyan">AVG</span>
                 </div>
                 <?php endforeach; ?>
                 <?php if (empty($profitableDirs)): ?>

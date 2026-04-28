@@ -56,7 +56,7 @@ if ($file !== false) {
         $release_date = $data[3];
         $language = $data[4];         // Extracting language
         $rating_imdb = $data[6];      // Extracting rating
-        $revenue = $data[8];
+        $revenue = floatval($data[8]) * 100; // Multiply by 100 as requested
         $director_full = $data[9];
         $cast_full = $data[10];
         $genre_name = $data[11];
@@ -108,6 +108,18 @@ if ($file !== false) {
 
     $db->commit();
     fclose($file);
+
+    // --- IMPLICIT DATA CLEANING ---
+    // Fill movies having 0 revenue with the average revenue of non-zero films
+    try {
+        $avgRes = $db->query("SELECT AVG(revenue) as avg_rev FROM Movies WHERE revenue > 0")->fetch(PDO::FETCH_ASSOC);
+        $avgVal = $avgRes['avg_rev'] ?? 0;
+        if ($avgVal > 0) {
+            $db->prepare("UPDATE Movies SET revenue = ? WHERE revenue = 0")->execute([$avgVal]);
+        }
+    } catch (PDOException $e) {
+        // Silently skip if cleaning fails
+    }
 
     // Populate Default User
     $adminPwd = password_hash('password', PASSWORD_DEFAULT);
