@@ -117,7 +117,7 @@ $currentYear = date('Y');
     .filter-chip .chip-x { font-size: .8rem; opacity: .7; }
 
     /* ── Search dropdown ── */
-    .search-dropdown {
+    .vault-search-dropdown {
       position: absolute;
       top: calc(100% + 4px);
       left: 0; right: 0;
@@ -223,7 +223,7 @@ $currentYear = date('Y');
         <div class="filter-group search-group">
           <label>Search</label>
           <input type="text" id="f-search" placeholder="Title, director, actor…" autocomplete="off">
-          <div id="search-dropdown" class="search-dropdown"></div>
+          <div id="search-dropdown" class="vault-search-dropdown"></div>
         </div>
 
         <!-- Genre -->
