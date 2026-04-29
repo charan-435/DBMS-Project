@@ -7,6 +7,14 @@ $service = new DataService();
 $genres  = $service->getAllGenres();
 $topDirectors = $service->getTopDirectorsDetailed(12);
 
+// Get distinct languages
+$langs = [];
+try {
+    $db = Database::getConnection();
+    $s  = $db->query("SELECT DISTINCT language FROM Movies WHERE language IS NOT NULL ORDER BY language");
+    $langs = $s->fetchAll(PDO::FETCH_COLUMN);
+} catch(Exception $e) { $langs = []; }
+
 $avatarColors = [
     ['#e8a57e', '#d4845a'], ['#5cd6b6', '#3bb89a'],
     ['#6ea8fe', '#4a8ae0'], ['#a68dff', '#8565e0']
@@ -163,12 +171,31 @@ $avatarColors = [
         border-radius: 6px;
         cursor: pointer;
         text-decoration: none;
+        transition: all 0.2s;
     }
     .page-link.active {
         background: var(--accent-primary);
         color: var(--bg-dark);
         border-color: var(--accent-primary);
     }
+    .page-link.disabled { opacity: .4; pointer-events: none; }
+
+    /* Chips & Overlay */
+    .active-filters { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+    .filter-chip {
+      display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .7rem;
+      background: rgba(126,175,232,.1); border: 1px solid rgba(126,175,232,.2);
+      border-radius: 20px; font-size: .7rem; color: var(--accent-primary);
+      font-weight: 600; cursor: pointer;
+    }
+    .vault-grid-wrap { position: relative; min-height: 400px; }
+    #loading-overlay {
+      position: absolute; inset: 0; background: rgba(10,10,15,0.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 10; border-radius: var(--radius-lg); backdrop-filter: blur(2px);
+    }
+    .spinner { width: 30px; height: 30px; border: 3px solid var(--border-color); border-top-color: var(--accent-primary); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -231,11 +258,14 @@ $avatarColors = [
 
         <div class="filter-panel">
             <div class="filter-group" style="flex: 1;">
-                <label>Search Name</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.1rem;">
+                    <label>Search Name</label>
+                    <a href="javascript:void(0)" onclick="openPowerAnalytics()" class="text-accent" style="font-size: 0.6rem; font-weight: 700; text-transform: uppercase; text-decoration: none;">Power Analytics ↗</a>
+                </div>
                 <input type="text" id="f-search" placeholder="Search directors...">
             </div>
             <div class="filter-group">
-                <label>Genre Specialization</label>
+                <label>Genre</label>
                 <select id="f-genre">
                     <option value="">All Genres</option>
                     <?php foreach ($genres as $g): ?>
@@ -243,7 +273,16 @@ $avatarColors = [
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="filter-group" style="min-width: 100px;">
+            <div class="filter-group">
+                <label>Language</label>
+                <select id="f-lang">
+                    <option value="">All Languages</option>
+                    <?php foreach ($langs as $l): ?>
+                        <option value="<?= htmlspecialchars($l) ?>"><?= htmlspecialchars(getLanguageName($l)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="filter-group" style="min-width: 90px;">
                 <label>Min Rating ★</label>
                 <select id="f-min-rating">
                     <option value="">Any</option>
@@ -280,8 +319,13 @@ $avatarColors = [
             <button class="btn-primary" id="btn-reset" style="height: 38px;">RESET</button>
         </div>
 
-        <div id="vault-list" class="vault-grid">
-            <!-- Dynamic Content -->
+        <div id="active-filters" class="active-filters"></div>
+
+        <div class="vault-grid-wrap">
+            <div id="loading-overlay"><div class="spinner"></div></div>
+            <div id="vault-list" class="vault-grid">
+                <!-- Dynamic Content -->
+            </div>
         </div>
 
         <div id="pagination" class="pagination">
@@ -297,6 +341,7 @@ $avatarColors = [
     let currentPage = 1;
     const fSearch = document.getElementById('f-search');
     const fGenre = document.getElementById('f-genre');
+    const fLang = document.getElementById('f-lang');
     const fMinRating = document.getElementById('f-min-rating');
     const fMinYear = document.getElementById('f-min-year');
     const fMaxYear = document.getElementById('f-max-year');
@@ -305,14 +350,47 @@ $avatarColors = [
     const btnReset = document.getElementById('btn-reset');
     const vaultList = document.getElementById('vault-list');
     const pagination = document.getElementById('pagination');
+    const overlay = document.getElementById('loading-overlay');
+    const chipsCon = document.getElementById('active-filters');
+
+    window.openPowerAnalytics = () => {
+        const name = fSearch.value.trim();
+        if(!name) { alert("Please enter a name to analyze."); return; }
+        window.location.href = `explore.php?q=${encodeURIComponent(name)}`;
+    };
+
+    function renderChips() {
+      const chips = [];
+      if (fSearch.value.trim()) chips.push({ label: `"${fSearch.value.trim()}"`, clear: () => fSearch.value = '' });
+      if (fGenre.value) chips.push({ label: fGenre.options[fGenre.selectedIndex].text, clear: () => fGenre.value = '' });
+      if (fLang.value) chips.push({ label: fLang.options[fLang.selectedIndex].text, clear: () => fLang.value = '' });
+      if (fMinRating.value) chips.push({ label: `★ ${fMinRating.value}+`, clear: () => fMinRating.value = '' });
+      if (fMinYear.value) chips.push({ label: `From ${fMinYear.value}`, clear: () => fMinYear.value = '' });
+      if (fMaxYear.value) chips.push({ label: `To ${fMaxYear.value}`, clear: () => fMaxYear.value = '' });
+      
+      chipsCon.innerHTML = chips.map((c, i) => 
+        `<span class="filter-chip" data-idx="${i}">${c.label} ✕</span>`
+      ).join('');
+      
+      chipsCon.querySelectorAll('.filter-chip').forEach(el => {
+        el.onclick = () => {
+          chips[el.dataset.idx].clear();
+          loadVault(1);
+        };
+      });
+    }
 
     async function loadVault(page = 1) {
         currentPage = page;
+        overlay.style.display = 'flex';
+        renderChips();
+
         const q = new URLSearchParams({
             type: 'director',
             page: page,
             search: fSearch.value,
             genre: fGenre.value,
+            lang: fLang.value,
             min_rating: fMinRating.value,
             min_year: fMinYear.value,
             max_year: fMaxYear.value,
@@ -320,7 +398,10 @@ $avatarColors = [
             order: fOrder.value
         });
 
-        vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">Syncing Director Data...</div>';
+        // Sync URL
+        const url = new URL(window.location);
+        url.search = q.toString();
+        window.history.replaceState({}, '', url);
 
         try {
             const res = await fetch(`api/people_api.php?${q}`);
@@ -329,6 +410,9 @@ $avatarColors = [
             renderPagination(data.total);
         } catch (e) {
             console.error(e);
+            vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #ef4444;">Error loading data.</div>';
+        } finally {
+            overlay.style.display = 'none';
         }
     }
 
@@ -371,6 +455,8 @@ $avatarColors = [
         const start = Math.max(1, currentPage - 2);
         const end = Math.min(totalPages, currentPage + 2);
 
+        html += `<button class="page-link ${currentPage === 1 ? 'disabled' : ''}" onclick="loadVault(${currentPage - 1})">←</button>`;
+        
         if (start > 1) html += `<button class="page-link" onclick="loadVault(1)">1</button>${start > 2 ? '...' : ''}`;
         
         for (let i = start; i <= end; i++) {
@@ -378,20 +464,23 @@ $avatarColors = [
         }
 
         if (end < totalPages) html += `${end < totalPages - 1 ? '...' : ''}<button class="page-link" onclick="loadVault(${totalPages})">${totalPages}</button>`;
+        
+        html += `<button class="page-link ${currentPage === totalPages ? 'disabled' : ''}" onclick="loadVault(${currentPage + 1})">→</button>`;
 
         pagination.innerHTML = html;
     }
 
-    [fSearch, fGenre, fMinRating, fMinYear, fMaxYear, fSort, fOrder].forEach(el => {
+    [fSearch, fGenre, fLang, fMinRating, fMinYear, fMaxYear, fSort, fOrder].forEach(el => {
         el.addEventListener('input', () => {
             clearTimeout(window.searchTimeout);
-            window.searchTimeout = setTimeout(() => loadVault(1), 300);
+            window.searchTimeout = setTimeout(() => loadVault(1), 350);
         });
     });
  
     btnReset.addEventListener('click', () => {
         fSearch.value = '';
         fGenre.value = '';
+        fLang.value = '';
         fMinRating.value = '';
         fMinYear.value = '';
         fMaxYear.value = '';
@@ -400,7 +489,19 @@ $avatarColors = [
         loadVault(1);
     });
 
-    loadVault(1);
+    // Sync from URL on load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('search')) fSearch.value = urlParams.get('search');
+    if (urlParams.has('genre')) fGenre.value = urlParams.get('genre');
+    if (urlParams.has('lang')) fLang.value = urlParams.get('lang');
+    if (urlParams.has('min_rating')) fMinRating.value = urlParams.get('min_rating');
+    if (urlParams.has('min_year')) fMinYear.value = urlParams.get('min_year');
+    if (urlParams.has('max_year')) fMaxYear.value = urlParams.get('max_year');
+    if (urlParams.has('sort')) fSort.value = urlParams.get('sort');
+    if (urlParams.has('order')) fOrder.value = urlParams.get('order');
+    currentPage = parseInt(urlParams.get('page')) || 1;
+
+    loadVault(currentPage);
   </script>
 </body>
 </html>

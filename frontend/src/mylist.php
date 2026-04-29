@@ -27,8 +27,24 @@ function fmtRev($n)
     .mylist-grid { display: grid; grid-template-columns: 1fr 350px; gap: 2rem; }
     @media(max-width: 1000px) { .mylist-grid { grid-template-columns: 1fr; } }
     
+    .watchlist-scroll { 
+        max-height: 70vh; 
+        overflow-y: auto; 
+        padding-right: 0.5rem; 
+    }
+    .watchlist-scroll::-webkit-scrollbar { width: 4px; }
+    .watchlist-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+    
     .watchlist-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem; }
     
+    .comments-scroll { 
+        max-height: 500px; 
+        overflow-y: auto; 
+        padding-right: 0.5rem; 
+    }
+    .comments-scroll::-webkit-scrollbar { width: 4px; }
+    .comments-scroll::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+
     .movie-mini-card {
         background: var(--bg-card);
         border: 1px solid var(--border-color);
@@ -70,20 +86,22 @@ function fmtRev($n)
                 <a href="movies.php" class="btn-accent" style="display: inline-block; margin-top: 1.5rem; text-decoration: none;">Browse Movies</a>
             </div>
           <?php else: ?>
-            <div class="watchlist-container">
-                <?php foreach ($watchlist as $m): ?>
-                    <div class="movie-mini-card">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <span class="genre-badge genre-default" style="font-size: 0.6rem;"><?= htmlspecialchars($m['genre_name']) ?></span>
-                            <span style="color: #f5c518; font-weight: 700; font-size: 0.8rem;">★ <?= number_format($m['rating_imdb'], 1) ?></span>
+            <div class="watchlist-scroll">
+                <div class="watchlist-container">
+                    <?php foreach ($watchlist as $m): ?>
+                        <div class="movie-mini-card">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <span class="genre-badge genre-default" style="font-size: 0.6rem;"><?= htmlspecialchars($m['genre_name']) ?></span>
+                                <span style="color: #f5c518; font-weight: 700; font-size: 0.8rem;">★ <?= number_format($m['rating_imdb'], 1) ?></span>
+                            </div>
+                            <h3 style="font-size: 1rem; font-weight: 700; margin: 0.25rem 0;"><a href="movie_details.php?id=<?= $m['movie_id'] ?>" style="color: inherit; text-decoration: none;"><?= htmlspecialchars($m['title']) ?></a></h3>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
+                                <span><?= $m['release_year'] ?></span>
+                                <span><?= fmtRev($m['revenue']) ?></span>
+                            </div>
                         </div>
-                        <h3 style="font-size: 1rem; font-weight: 700; margin: 0.25rem 0;"><a href="movie_details.php?id=<?= $m['movie_id'] ?>" style="color: inherit; text-decoration: none;"><?= htmlspecialchars($m['title']) ?></a></h3>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted);">
-                            <span><?= $m['release_year'] ?></span>
-                            <span><?= fmtRev($m['revenue']) ?></span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
           <?php endif; ?>
         </div>
@@ -94,17 +112,26 @@ function fmtRev($n)
           <div class="card">
             <h3 style="font-size: 1rem; margin-bottom: 1.25rem;">My Comments</h3>
             <?php if (empty($userComments)): ?>
-                <p class="text-muted" style="font-size: 0.85rem; text-align: center; padding: 2rem 0;">You haven't posted any comments yet.</p>
+                <div id="no-comments-area">
+                    <p class="text-muted" style="font-size: 0.85rem; text-align: center; padding: 2rem 0;">You haven't posted any comments yet.</p>
+                </div>
             <?php else: ?>
-                <?php foreach ($userComments as $c): ?>
-                    <div class="comment-item">
-                        <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 700; margin-bottom: 0.35rem;">
-                            <a href="movie_details.php?id=<?= $c['movie_id'] ?>" style="color: inherit; text-decoration: none;"><?= strtoupper(htmlspecialchars($c['title'])) ?></a>
-                        </div>
-                        <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;"><?= htmlspecialchars($c['content']) ?></div>
-                        <div style="font-size: 0.65rem; color: var(--text-muted); text-align: right;"><?= date('M d, Y', strtotime($c['created_at'])) ?></div>
+                <div class="comments-scroll">
+                    <div id="comments-list">
+                        <?php foreach ($userComments as $c): ?>
+                            <div class="comment-item" id="comment-<?= $c['comment_id'] ?>">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
+                                    <div style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 700;">
+                                        <a href="movie_details.php?id=<?= $c['movie_id'] ?>" style="color: inherit; text-decoration: none;"><?= strtoupper(htmlspecialchars($c['title'])) ?></a>
+                                    </div>
+                                    <button onclick="deleteComment(<?= $c['comment_id'] ?>)" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 0.8rem; padding: 0 0.25rem;" title="Delete Comment">✕</button>
+                                </div>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 0.5rem;"><?= htmlspecialchars($c['content']) ?></div>
+                                <div style="font-size: 0.65rem; color: var(--text-muted); text-align: right;"><?= date('M d, Y', strtotime($c['created_at'])) ?></div>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
-                <?php endforeach; ?>
+                </div>
             <?php endif; ?>
           </div>
         </div>
@@ -112,5 +139,35 @@ function fmtRev($n)
 
     </div>
   </main>
+
+  <script>
+    async function deleteComment(id) {
+        if (!confirm('Are you sure you want to delete this comment?')) return;
+        
+        try {
+            const res = await fetch('api/comments_api.php?action=delete', {
+                method: 'POST',
+                body: JSON.stringify({ comment_id: id })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                const el = document.getElementById(`comment-${id}`);
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(20px)';
+                setTimeout(() => {
+                    el.remove();
+                    if (document.querySelectorAll('.comment-item').length === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            } else {
+                alert(data.message || 'Failed to delete comment');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('An error occurred');
+        }
+    }
+  </script>
 </body>
 </html>
