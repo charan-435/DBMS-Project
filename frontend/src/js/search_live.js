@@ -1,7 +1,4 @@
-/**
- * Live Search Logic with Multi-Entity Support
- * Uses root-relative paths to work from any page.
- */
+//logic of live search
 document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('global-search');
     const searchType = document.getElementById('search-type');

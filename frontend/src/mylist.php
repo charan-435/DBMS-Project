@@ -110,7 +110,6 @@ function fmtRev($n)
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. MY LIST V1.0</div>
     </div>
   </main>
 </body>

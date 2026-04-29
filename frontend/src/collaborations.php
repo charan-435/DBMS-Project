@@ -19,7 +19,7 @@ $repeatActors = $service->getRepeatCollaborators(2, 8);
 // Top directors for the network
 $topDirs = $service->getTopDirectorsByCount(5);
 
-// New: Top actors by revenue + actors who work with most directors
+//Top actors by revenue + actors who work with most directors
 $actorsByRevenue = $service->getTopActorsByRevenue(6);
 $actorsDirDiversity = $service->getActorCollaborationCount(6);
 
@@ -58,7 +58,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
     .versatile-item:last-child { border-bottom: none; }
     .versatile-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
     .versatile-name { font-weight: 600; font-size: 0.88rem; }
-    .versatile-count { font-weight: 700; color: var(--accent-primary); font-size: 0.85rem; }
+    .versatile-count { font-weight: 700; color: var(--accent-primary); font-size: 0.85rem; white-space: nowrap; flex-shrink: 0; text-align: right; margin-left: 0.5rem; }
     .versatile-genres { display: flex; flex-wrap: wrap; gap: 0.3rem; }
     .genre-chip {
       background: rgba(255,255,255,0.06); padding: 0.15rem 0.45rem;
@@ -75,6 +75,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
     .pair-count {
       background: var(--accent-glow); color: var(--accent-primary); font-weight: 700;
       padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.75rem;
+      white-space: nowrap; flex-shrink: 0; margin-left: 0.5rem;
     }
 
     .network-card { position: relative; min-height: 320px; }
@@ -106,7 +107,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     <div class="page-content">
 
-      <!-- Header -->
+      
       <div style="margin-bottom: 1.5rem;">
         <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">RELATIONSHIP INTELLIGENCE</p>
         <h1 style="font-size: 2.25rem; font-weight: 800;">Collaboration <em style="color: var(--accent-primary); font-style: italic;">Networks</em></h1>
@@ -115,7 +116,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </p>
       </div>
 
-      <!-- Row 1: Director-Actor Duos + Network Visualization -->
+      <!--  Director-Actor Duos + Network Visualization -->
       <div class="collab-grid">
         <!-- Dynamic Duos -->
         <div class="card">
@@ -144,36 +145,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <?php endif; ?>
         </div>
 
-        <!-- Network Visualization -->
-        <div class="card network-card">
-          <div class="section-label">COLLABORATION MAP</div>
-          <div class="card-title-collab">Director Network</div>
-
-          <?php if (!empty($topDirs)):
-            $positions = [
-              ['left' => '40%', 'top' => '40%'],  // Center
-              ['left' => '10%', 'top' => '15%'],
-              ['left' => '70%', 'top' => '10%'],
-              ['left' => '65%', 'top' => '65%'],
-              ['left' => '8%',  'top' => '68%'],
-            ];
-            foreach ($topDirs as $di => $dir):
-              $pos = $positions[$di % count($positions)];
-              $color = $barColors[$di % count($barColors)];
-              $nameParts = explode(' ', trim($dir['director']));
-              $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
-          ?>
-          <div class="network-node" style="left: <?= $pos['left'] ?>; top: <?= $pos['top'] ?>;">
-            <div class="network-label" style="font-size: 0.95rem; font-weight: 700; color: <?= $color ?>; max-width: none;"><?= htmlspecialchars($dir['director']) ?></div>
-            <div class="network-sublabel"><?= $dir['movie_count'] ?> films</div>
-          </div>
-          <?php endforeach; endif; ?>
-        </div>
-      </div>
-
-      <!-- Row 2: Genre Versatility + Actor Pairs -->
+        
+      <!--  Genre Versatility + Actor Pairs -->
       <div class="collab-grid-equal">
-        <!-- Genre Versatility -->
+       
         <div class="card">
           <div class="section-label">GENRE RANGE</div>
           <div class="card-title-collab">Most Versatile Actors</div>
@@ -185,11 +160,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                 <span class="versatile-name"><?= htmlspecialchars($v['actor']) ?></span>
                 <span class="versatile-count"><?= $v['genres_count'] ?> genres · <?= $v['total_films'] ?> films</span>
               </div>
-              <div class="versatile-genres">
-                <?php foreach (explode(', ', $v['genres']) as $g): ?>
-                  <span class="genre-chip"><?= htmlspecialchars($g) ?></span>
-                <?php endforeach; ?>
-              </div>
+             
             </div>
             <?php endforeach; ?>
           <?php else: ?>
@@ -332,8 +303,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. COLLABORATION INTELLIGENCE ENGINE.</div>
-    </div>
+       </div>
   </main>
 
   <script>

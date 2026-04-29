@@ -256,13 +256,12 @@ if ($m2_id && !$movie2) $m2_id = null;
 
       <?php else: ?>
       <div style="text-align: center; padding: 5rem 0; color: var(--text-muted);">
-        <div style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.5;">📊</div>
+        <div style="font-size: 3rem; margin-bottom: 1.5rem; opacity: 0.5;"></div>
         <h3 style="font-weight: 700;">Select two movies to begin analysis</h3>
         <p style="font-size: 0.85rem; margin-top: 0.5rem;">Use the search boxes above to find movies in our database.</p>
       </div>
       <?php endif; ?>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
 
