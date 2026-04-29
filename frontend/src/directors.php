@@ -22,7 +22,7 @@ $avatarColors = [
   <style>
     .directors-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
     }
@@ -177,7 +177,7 @@ $avatarColors = [
         <p class="mt-4">The visionaries behind the lens—ranking the highest-rated and most commercially successful directors.</p>
       </div>
 
-      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Rated <em style="color: var(--accent-primary); font-style: italic;">Auteurs</em></h2>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Rated <em style="color: var(--accent-primary); font-style: italic;">Directors</em></h2>
       
       <div class="directors-grid">
         <?php foreach ($topDirectors as $i => $director): 
