@@ -1624,8 +1624,9 @@ class DataService
             return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(d.first_name, ' ', d.last_name) as name,
+                SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as name,
                        COUNT(m.movie_id) as total_films,
+                       COUNT(m.movie_id) as movie_count,
                        ROUND(AVG(m.rating_imdb), 2) as avg_rating,
                        SUM(m.revenue) as total_revenue,
                        MAX(m.rating_imdb) as best_rating,
@@ -1647,6 +1648,93 @@ class DataService
         } catch (PDOException $e) {
             return [];
         }
+    }
+
+    public function getPeoplePaginated($type = 'actor', $page = 1, $limit = 15, $filters = [])
+    {
+        if (!$this->conn) return ['results' => [], 'total' => 0];
+        
+        $offset = ($page - 1) * $limit;
+        $table = ($type === 'director') ? 'Directors' : 'Actors';
+        $idCol = ($type === 'director') ? 'director_id' : 'actor_id';
+        $joinTable = ($type === 'director') ? 'Movies m' : 'Movie_Actors ma JOIN Movies m ON ma.movie_id = m.movie_id';
+        $joinOn = ($type === 'director') ? 'd.director_id = m.director_id' : 'a.actor_id = ma.actor_id';
+        $alias = ($type === 'director') ? 'd' : 'a';
+
+        $where = ["$alias.first_name NOT LIKE '%Unknown%'"];
+        $params = [];
+
+        if (!empty($filters['search'])) {
+            $where[] = "($alias.first_name LIKE :s1 OR $alias.last_name LIKE :s2 OR CONCAT($alias.first_name, ' ', $alias.last_name) LIKE :s3)";
+            $params[':s1'] = '%' . $filters['search'] . '%';
+            $params[':s2'] = '%' . $filters['search'] . '%';
+            $params[':s3'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($filters['genre'])) {
+            $where[] = "m.genre_id = :gid";
+            $params[':gid'] = $filters['genre'];
+        }
+
+        if (!empty($filters['min_rating'])) {
+            $where[] = "m.rating_imdb >= :minr";
+            $params[':minr'] = $filters['min_rating'];
+        }
+
+        if (!empty($filters['min_year'])) {
+            $where[] = "m.release_year >= :miny";
+            $params[':miny'] = $filters['min_year'];
+        }
+
+        if (!empty($filters['max_year'])) {
+            $where[] = "m.release_year <= :maxy";
+            $params[':maxy'] = $filters['max_year'];
+        }
+
+        $whereSql = implode(' AND ', $where);
+
+        $sortField = 'total_revenue';
+        if (!empty($filters['sort'])) {
+            $allowedSort = ['total_revenue', 'avg_rating', 'total_films', 'name'];
+            $sortMap = ['name' => "CONCAT($alias.first_name, ' ', $alias.last_name)"];
+            if (in_array($filters['sort'], $allowedSort)) {
+                $sortField = $sortMap[$filters['sort']] ?? $filters['sort'];
+            }
+        }
+        $order = ($filters['order'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
+
+        try {
+            // Count total
+            $countSql = "SELECT COUNT(DISTINCT $alias.$idCol) FROM $table $alias 
+                        JOIN $joinTable ON $joinOn
+                        WHERE $whereSql";
+            $cStmt = $this->conn->prepare($countSql);
+            $cStmt->execute($params);
+            $total = (int)$cStmt->fetchColumn();
+
+            // Results
+            $sql = "SELECT $alias.$idCol as id, CONCAT($alias.first_name, ' ', $alias.last_name) as name,
+                           COUNT(m.movie_id) as total_films,
+                           ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                           SUM(m.revenue) as total_revenue,
+                           GROUP_CONCAT(DISTINCT g.genre_name SEPARATOR ', ') as genres
+                    FROM $table $alias
+                    JOIN $joinTable ON $joinOn
+                    JOIN Genres g ON m.genre_id = g.genre_id
+                    WHERE $whereSql
+                    GROUP BY $alias.$idCol
+                    ORDER BY $sortField $order
+                    LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->conn->prepare($sql);
+            foreach ($params as $k => $v) $stmt->bindValue($k, $v);
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+            $stmt->execute();
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return ['results' => $results, 'total' => $total];
+        } catch (PDOException $e) { return ['results' => [], 'total' => 0]; }
     }
 
     public function getYearlyMovieCount()

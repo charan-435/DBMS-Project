@@ -13,6 +13,9 @@
     <a href="actors.php" class="nav-item <?= ($currentPage == 'actors.php') ? 'active' : '' ?>">
       Actors
     </a>
+    <a href="directors.php" class="nav-item <?= ($currentPage == 'directors.php') ? 'active' : '' ?>">
+      Directors
+    </a>
     <a href="compare.php" class="nav-item <?= ($currentPage == 'compare.php') ? 'active' : '' ?>">
       Compare
     </a>
