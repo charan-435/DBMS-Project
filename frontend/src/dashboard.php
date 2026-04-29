@@ -13,7 +13,7 @@ $totalMovies = $service->getTotalMovies();
 
 
 // Trending Movies
-$trending = $service->getTrendingMovies(5);
+$trending = $service->getTrendingMovies(4);
 
 // New: Top directors & recent acclaimed
 $topDirsByCount = $service->getTopDirectorsByCount(5);
@@ -210,6 +210,7 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             <?php endif; ?>
           </div>
         </div>
+      </div> <!-- End of middle-row -->
 
       <!-- GOLDEN YEAR SPOTLIGHT -->
       <?php $goldenYear = $service->getGoldenYear(); ?>
@@ -231,7 +232,6 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         </div>
       </div>
       <?php endif; ?>
-      </div>
 
 
     </div>

@@ -251,6 +251,13 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           Select multiple actors and/or directors to find movies they worked on together and view collective statistics.
         </p>
 
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Try this collab:</span>
+            <button onclick="tryCollab('Shraddha Kapoor', 'Aditya Roy Kap')" class="btn-outline" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; border-radius: 20px; border-color: rgba(255,255,255,0.2);">
+                Shraddha Kapoor × Aditya Roy Kapur
+            </button>
+        </div>
+
         <div style="position: relative; margin-bottom: 1rem;">
           <input type="text" id="person-search" class="builder-input" placeholder="Type name (e.g. Aamir Khan, Rajkumar Hirani)..." style="width: 100%; padding: 0.8rem; border-radius: 8px;">
           <div id="search-dropdown" class="card" style="position: absolute; top: 110%; left: 0; right: 0; z-index: 1000; display: none; padding: 0.5rem; background: #11121a; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);"></div>
@@ -466,6 +473,31 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         dropdown.style.display = 'none';
       }
     });
+
+    async function tryCollab(name1, name2) {
+      selectedPeople = [];
+      renderSelected();
+      resultsBox.style.display = 'none';
+      
+      try {
+        const fetch1 = await fetch(`api/search_api.php?q=${encodeURIComponent(name1)}&type=all`);
+        const res1 = await fetch1.json();
+        const p1 = res1.find(r => r.type === 'actor');
+        if(p1) selectedPeople.push({id: p1.id, name: p1.name, type: p1.type});
+
+        const fetch2 = await fetch(`api/search_api.php?q=${encodeURIComponent(name2)}&type=all`);
+        const res2 = await fetch2.json();
+        const p2 = res2.find(r => r.type === 'actor');
+        if(p2) selectedPeople.push({id: p2.id, name: p2.name, type: p2.type});
+
+        renderSelected();
+        if(selectedPeople.length > 0) {
+            btnAnalyze.click();
+        }
+      } catch (err) {
+        console.error("Failed to load suggested collab", err);
+      }
+    }
   </script>
 </body>
 </html>
