@@ -438,7 +438,7 @@ class DataService
             try {
                 $stmt = $this->conn->prepare("
                     SELECT m.movie_id, m.title, m.revenue, m.language, m.rating_imdb, 
-                           CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genre
+                           CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genres
                     FROM Movies m
                     JOIN Directors d ON m.director_id = d.director_id
                     JOIN Genres g ON m.genre_id = g.genre_id
@@ -1738,7 +1738,7 @@ class DataService
                 WHERE a.first_name NOT LIKE '%Unknown%' AND m.rating_imdb > 0
                 GROUP BY a.actor_id
                 HAVING COUNT(ma.movie_id) >= 2
-                ORDER BY total_revenue DESC
+                ORDER BY movie_count DESC, total_revenue DESC
                 LIMIT :limit
             ");
             $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
@@ -1820,6 +1820,11 @@ class DataService
         if (!empty($filters['max_year'])) {
             $where[] = "m.release_year <= :maxy";
             $params[':maxy'] = $filters['max_year'];
+        }
+
+        if (!empty($filters['lang'])) {
+            $where[] = "m.language = :lang";
+            $params[':lang'] = $filters['lang'];
         }
 
         $whereSql = implode(' AND ', $where);
@@ -2077,7 +2082,7 @@ class DataService
     {
         try {
             $stmt = $this->conn->prepare("
-                SELECT c.content, c.created_at, m.title, m.movie_id
+                SELECT c.comment_id, c.content, c.created_at, m.title, m.movie_id
                 FROM Movie_Comments c
                 JOIN Movies m ON c.movie_id = m.movie_id
                 WHERE c.user_id = :uid
@@ -2086,6 +2091,15 @@ class DataService
             $stmt->execute(['uid' => $userId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
+    }
+
+    public function deleteComment($commentId, $userId)
+    {
+        if (!$this->conn) return false;
+        try {
+            $stmt = $this->conn->prepare("DELETE FROM Movie_Comments WHERE comment_id = :cid AND user_id = :uid");
+            return $stmt->execute(['cid' => $commentId, 'uid' => $userId]);
+        } catch (PDOException $e) { return false; }
     }
 
     public function searchEntities($query, $type = 'all', $limit = 5)

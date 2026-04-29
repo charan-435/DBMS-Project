@@ -14,6 +14,15 @@ try {
     $db->exec("TRUNCATE TABLE Directors");
     $db->exec("TRUNCATE TABLE Genres");
     $db->exec("TRUNCATE TABLE Users");
+    $db->exec("TRUNCATE TABLE Movie_Unique_Genres");
+    $db->exec("SET FOREIGN_KEY_CHECKS = 0; TRUNCATE TABLE Unique_Genres; SET FOREIGN_KEY_CHECKS = 1;");
+
+    // Clear analytical cache
+    $cacheDir = __DIR__ . '/cache';
+    if (is_dir($cacheDir)) {
+        $files = glob($cacheDir . '/*.cache');
+        foreach ($files as $f) @unlink($f);
+    }
 } catch (PDOException $e) {
     die("<h3>Database Error: Tables are missing!</h3>
          <p>You need to import the new schema first.</p>
@@ -126,8 +135,45 @@ if ($file !== false) {
     $db->prepare("INSERT INTO Users (full_name, user_id, password) VALUES ('Administrator', 'admin', ?)")
        ->execute([$adminPwd]);
 
+    // --- NORMALIZATION: Populate Unique Genres & Mappings ---
+    echo "<li>Normalizing genres for trend analysis...</li>";
+    try {
+        $stmtNorm = $db->query("SELECT m.movie_id, g.genre_name FROM Movies m JOIN Genres g ON m.genre_id = g.genre_id WHERE g.genre_name IS NOT NULL AND g.genre_name != 'Unknown'");
+        $moviesForNorm = $stmtNorm->fetchAll(PDO::FETCH_ASSOC);
+        
+        $uniqueGenresSet = [];
+        foreach ($moviesForNorm as $m) {
+            $parts = explode(',', $m['genre_name']);
+            foreach ($parts as $p) {
+                $clean = trim($p);
+                if ($clean && !isset($uniqueGenresSet[$clean])) $uniqueGenresSet[$clean] = true;
+            }
+        }
+
+        $uniqueGenreIds = [];
+        $insertUG = $db->prepare("INSERT INTO Unique_Genres (genre_name) VALUES (:name)");
+        foreach (array_keys($uniqueGenresSet) as $gen) {
+            $insertUG->execute(['name' => $gen]);
+            $uniqueGenreIds[$gen] = $db->lastInsertId();
+        }
+
+        $insertMUG = $db->prepare("INSERT IGNORE INTO Movie_Unique_Genres (movie_id, single_genre_id) VALUES (:mid, :gid)");
+        foreach ($moviesForNorm as $m) {
+            $parts = explode(',', $m['genre_name']);
+            foreach ($parts as $p) {
+                $clean = trim($p);
+                if ($clean && isset($uniqueGenreIds[$clean])) {
+                    $insertMUG->execute(['mid' => $m['movie_id'], 'gid' => $uniqueGenreIds[$clean]]);
+                }
+            }
+        }
+    } catch (PDOException $e) {
+        echo "<li style='color:red;'>Normalization failed: " . $e->getMessage() . "</li>";
+    }
+
     echo "<h2 style='color:green;'>✅ Database recreated and populated!</h2>";
     echo "<p>Default User: <strong>admin</strong> | Password: <strong>password</strong></p>";
+    echo "<p>Advanced genre trends and multi-genre filters are now ready.</p>";
 } else {
     echo "Failed to open add_revenue.csv.";
 }
