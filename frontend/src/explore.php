@@ -159,9 +159,20 @@ $genreTrend = $service->getGenreTrend();
         </div>
       </div>
 
-      <!-- Suggested Insights -->
       <h3 style="font-size: 1rem; margin-bottom: 0.8rem; font-weight: 700;">Try These Insights</h3>
       <div class="suggestions-row">
+        <div class="suggestion-card" onclick="applySuggestion('title', 'SUM', 'revenue', 'ASC', [{field:'rating_imdb', op:'>=', val:'8.0'}])">
+          <div class="suggestion-title">The Flop Masterpieces</div>
+          <div class="suggestion-desc">Universally acclaimed movies (IMDb ≥ 8.0) that bombed at the box office.</div>
+        </div>
+        <div class="suggestion-card" onclick="applySuggestion('title', 'SUM', 'revenue', 'DESC', [{field:'rating_imdb', op:'<', val:'5.0'}])">
+          <div class="suggestion-title">Commercial Disasters</div>
+          <div class="suggestion-desc">Highly profitable movies that were absolutely hated by audiences (IMDb < 5.0).</div>
+        </div>
+        <div class="suggestion-card" onclick="applySuggestion('cast_names', 'MAX', 'revenue', 'DESC', [{field:'movie_count', op:'=', val:'1'}])">
+          <div class="suggestion-title">One-Hit Wonders</div>
+          <div class="suggestion-desc">Actors who appeared in exactly ONE movie, but it made massive revenue.</div>
+        </div>
         <div class="suggestion-card" onclick="applySuggestion('genre_name', 'AVG', 'rating_imdb', 'DESC')">
           <div class="suggestion-title">Highest Rated Genres</div>
           <div class="suggestion-desc">Find which genres have the highest average IMDb scores.</div>
@@ -173,14 +184,6 @@ $genreTrend = $service->getGenreTrend();
         <div class="suggestion-card" onclick="applySuggestion('director_name', 'SUM', 'revenue', 'DESC')">
           <div class="suggestion-title">Top Revenue Directors</div>
           <div class="suggestion-desc">See which directors generated the highest total box office.</div>
-        </div>
-        <div class="suggestion-card" onclick="applySuggestion('genre_name', 'SUM', 'revenue', 'DESC')">
-          <div class="suggestion-title">Genre Revenue Share</div>
-          <div class="suggestion-desc">Identify the most profitable genres across the platform.</div>
-        </div>
-        <div class="suggestion-card" onclick="applySuggestion('language', 'AVG', 'rating_imdb', 'DESC')">
-          <div class="suggestion-title">Best Languages</div>
-          <div class="suggestion-desc">Compare average ratings across different film industries.</div>
         </div>
         <div class="suggestion-card" onclick="runTrendAnalysis()">
           <div class="suggestion-title">Comparative Genre Trend</div>
@@ -298,7 +301,7 @@ $genreTrend = $service->getGenreTrend();
       
       <div class="curated-grid">
          <!-- Flop Masterpieces -->
-         <div class="insight-card">
+         <div class="insight-card" style="cursor: pointer;" onclick="applySuggestion('title', 'SUM', 'revenue', 'ASC', [{field:'rating_imdb', op:'>=', val:'8.0'}])">
            <div class="q-number">SPECIAL REPORT</div>
            <div class="q-title">The Flop Masterpieces</div>
            <div class="q-desc">Which universally acclaimed movies (IMDb ≥ 8.0) completely bombed at the box office?</div>
@@ -316,9 +319,9 @@ $genreTrend = $service->getGenreTrend();
          </div>
 
          <!-- Commercial Disasters -->
-         <div class="insight-card">
+         <div class="insight-card" style="cursor: pointer;" onclick="applySuggestion('title', 'SUM', 'revenue', 'DESC', [{field:'rating_imdb', op:'<', val:'5.0'}])">
            <div class="q-number">SPECIAL REPORT</div>
-           <div class="q-title">Commercial Hits, Critical Misses</div>
+           <div class="q-title">Commercial Disasters</div>
            <div class="q-desc">Which highly profitable movies were absolutely hated by audiences (IMDb < 5.0)?</div>
            <div class="a-content">
              <table class="mini-table">
@@ -334,7 +337,7 @@ $genreTrend = $service->getGenreTrend();
          </div>
 
          <!-- Genre Trends -->
-         <div class="insight-card">
+         <div class="insight-card" style="cursor: pointer;" onclick="window.location.href='genres.php#revenueGenreChart'">
            <div class="q-number">TREND ANALYSIS</div>
            <div class="q-title">Genre Shifts Over Time</div>
            <div class="q-desc">Production volume trend of Action versus Romance movies over the decades.</div>
@@ -401,7 +404,7 @@ $genreTrend = $service->getGenreTrend();
     // Initialize functions dropdown
     updateMetricFunctions();
 
-    function addFilterRow() {
+    function addFilterRow(field = 'search', op = '=', val = '') {
       const container = document.getElementById('filters-container');
       const row = document.createElement('div');
       row.className = 'filter-row';
@@ -425,19 +428,28 @@ $genreTrend = $service->getGenreTrend();
           <option value="<="><=</option>
           <option value="LIKE">Contains</option>
         </select>
-        <input type="text" class="f-val" placeholder="Value">
+        <input type="text" class="f-val" placeholder="Value" value="${val}">
         <button class="btn-remove-filter" onclick="this.parentElement.remove()">×</button>
       `;
       container.appendChild(row);
+      row.querySelector('.f-field').value = field;
+      row.querySelector('.f-op').value = op;
     }
 
-    function applySuggestion(dim, mFunc, mField, sort) {
+    function applySuggestion(dim, mFunc, mField, sort, filters = []) {
       document.getElementById('b-dimension').value = dim;
       document.getElementById('b-metric-field').value = mField;
       updateMetricFunctions();
       document.getElementById('b-metric-func').value = mFunc;
       document.getElementById('b-sort').value = sort;
-      document.getElementById('filters-container').innerHTML = '';
+      
+      const container = document.getElementById('filters-container');
+      container.innerHTML = '';
+      filters.forEach(f => {
+        addFilterRow(f.field, f.op, f.val);
+      });
+
+      window.scrollTo({ top: document.querySelector('.builder-panel').offsetTop - 100, behavior: 'smooth' });
       runInsight();
     }
 
