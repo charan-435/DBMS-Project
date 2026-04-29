@@ -226,14 +226,13 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
             </p>
           </div>
           <div style="margin-left: auto;">
-            <a href="explore.php?q=<?= $goldenYear['yr'] ?>" class="btn-primary" style="font-size: 0.75rem; padding: 0.6rem 1.2rem;">Analyze Year</a>
+            <a href="explore.php?q=<?= $goldenYear['yr'] ?>" class="btn-primary" style="font-size: 0.75rem; padding: 0.6rem 1.2rem;">Analyze</a>
           </div>
         </div>
       </div>
       <?php endif; ?>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
 
     </div>
   </main>

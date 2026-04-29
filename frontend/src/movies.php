@@ -326,7 +326,6 @@ $currentYear = date('Y');
       <!-- Pagination -->
       <div id="pagination-container" class="pagination"></div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DYNAMIC ARCHIVE SYNC ENABLED.</div>
     </div>
   </main>
 

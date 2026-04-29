@@ -5,7 +5,7 @@ require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 
-// New Crazy Insights
+//  Insights
 $flopMasterpieces = $service->getFlopMasterpieces(3);
 $disasters = $service->getCommercialDisasters(3);
 $oneHitWonders = $service->getOneHitWonders(3);

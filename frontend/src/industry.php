@@ -8,7 +8,7 @@ require_once __DIR__ . '/components/utils.php';
 
 $ds = new DataService();
 
-// ── Optimized Data Fetching ──────────────────────────────────────────────────
+// Optimized Data Fetching 
 $industryKPIs  = $ds->getIndustryKPIData();
 $totalMovies   = $industryKPIs['total_movies'] ?? 0;
 $totalRevenue  = $industryKPIs['total_revenue'] ?? 0;
@@ -255,9 +255,7 @@ $badgeDefs = [
         </div>
       </div>
 
-      <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 2rem; padding: 1rem; border-top: 1px solid var(--border-color);">
-        THE CINEMATIC LENS &copy; <?= date('Y') ?>. REGIONAL DATA INSIGHTS ENGINE.
-      </div>
+      
     </div>
   </main>
 </body>

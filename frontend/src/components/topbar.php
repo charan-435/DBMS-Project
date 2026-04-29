@@ -11,7 +11,7 @@
           <option value="actors">Actors</option>
         </select>
         <div class="search-field-wrap">
-          <span class="search-icon">&#x1F50D;</span>
+          
           <input type="text" id="global-search" placeholder="Search films, directors, actors..." autocomplete="off">
         </div>
         <div id="search-results-dropdown" class="search-dropdown hidden"></div>

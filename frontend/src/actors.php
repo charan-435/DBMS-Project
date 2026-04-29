@@ -353,7 +353,6 @@ $avatarColors = [
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
 
