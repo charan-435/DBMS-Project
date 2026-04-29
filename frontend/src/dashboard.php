@@ -215,9 +215,9 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
       <?php $goldenYear = $service->getGoldenYear(); ?>
       <?php if (!empty($goldenYear)): ?>
       <div class="card" style="margin-top: 1.5rem; background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(18, 18, 24, 0.5)); border: 1px solid var(--accent-glow);">
-        <div style="display: flex; align-items: center; gap: 2rem;">
+        <div style="display: flex; align-items: center; gap: 2rem; flex-wrap: wrap;">
           <div style="font-size: 3rem; font-weight: 900; color: var(--accent-primary); opacity: 0.8;"><?= $goldenYear['yr'] ?></div>
-          <div>
+          <div style="flex: 1; min-width: 250px;">
             <div class="text-accent text-xxs font-bold uppercase mb-1">CINEMATIC GOLDEN YEAR</div>
             <h3 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 0.5rem;">A Landmark in Indian Cinema</h3>
             <p style="font-size: 0.85rem; color: var(--text-secondary); max-width: 600px;">
@@ -225,8 +225,8 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
               <strong>&#x20B9;<?= formatRevenue($goldenYear['total_revenue']) ?></strong> across <strong><?= $goldenYear['movie_count'] ?></strong> tracked releases.
             </p>
           </div>
-          <div style="margin-left: auto;">
-            <a href="explore.php?q=<?= $goldenYear['yr'] ?>" class="btn-primary" style="font-size: 0.75rem; padding: 0.6rem 1.2rem;">Analyze Year</a>
+          <div style="margin-left: auto; padding-top: 0.5rem;">
+            <a href="explore.php?q=<?= $goldenYear['yr'] ?>" class="btn-primary" style="font-size: 0.75rem; padding: 0.6rem 1.2rem; display: inline-block;">Analyze Year</a>
           </div>
         </div>
       </div>

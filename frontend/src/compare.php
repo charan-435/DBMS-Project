@@ -229,11 +229,6 @@ if ($m2_id && !$movie2) $m2_id = null;
             ?>
           </td>
         </tr>
-        <tr>
-          <td><?= ($movie1['release_year'] < $movie2['release_year'] ? 'Earlier' : ($movie1['release_year'] == $movie2['release_year'] ? 'Same Year' : 'Later')) ?></td>
-          <td class="label-cell">Release Order</td>
-          <td><?= ($movie2['release_year'] < $movie1['release_year'] ? 'Earlier' : ($movie2['release_year'] == $movie1['release_year'] ? 'Same Year' : 'Later')) ?></td>
-        </tr>
       </table>
       
       <div style="margin-top: 3rem; text-align: center;">

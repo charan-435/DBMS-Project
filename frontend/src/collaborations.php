@@ -143,60 +143,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             <p class="text-muted" style="text-align:center; padding:2rem;">No collaboration data available. Populate the database first.</p>
           <?php endif; ?>
         </div>
-
-        <!-- Network Visualization -->
-        <div class="card network-card">
-          <div class="section-label">COLLABORATION MAP</div>
-          <div class="card-title-collab">Director Network</div>
-
-          <?php if (!empty($topDirs)):
-            $positions = [
-              ['left' => '40%', 'top' => '40%'],  // Center
-              ['left' => '10%', 'top' => '15%'],
-              ['left' => '70%', 'top' => '10%'],
-              ['left' => '65%', 'top' => '65%'],
-              ['left' => '8%',  'top' => '68%'],
-            ];
-            foreach ($topDirs as $di => $dir):
-              $pos = $positions[$di % count($positions)];
-              $color = $barColors[$di % count($barColors)];
-              $nameParts = explode(' ', trim($dir['director']));
-              $initials = strtoupper(substr($nameParts[0], 0, 1) . substr(end($nameParts), 0, 1));
-          ?>
-          <div class="network-node" style="left: <?= $pos['left'] ?>; top: <?= $pos['top'] ?>;">
-            <div class="network-label" style="font-size: 0.95rem; font-weight: 700; color: <?= $color ?>; max-width: none;"><?= htmlspecialchars($dir['director']) ?></div>
-            <div class="network-sublabel"><?= $dir['movie_count'] ?> films</div>
-          </div>
-          <?php endforeach; endif; ?>
-        </div>
       </div>
 
-      <!-- Row 2: Genre Versatility + Actor Pairs -->
-      <div class="collab-grid-equal">
-        <!-- Genre Versatility -->
-        <div class="card">
-          <div class="section-label">GENRE RANGE</div>
-          <div class="card-title-collab">Most Versatile Actors</div>
-
-          <?php if (!empty($versatile)): ?>
-            <?php foreach ($versatile as $v): ?>
-            <div class="versatile-item">
-              <div class="versatile-header">
-                <span class="versatile-name"><?= htmlspecialchars($v['actor']) ?></span>
-                <span class="versatile-count"><?= $v['genres_count'] ?> genres · <?= $v['total_films'] ?> films</span>
-              </div>
-              <div class="versatile-genres">
-                <?php foreach (explode(', ', $v['genres']) as $g): ?>
-                  <span class="genre-chip"><?= htmlspecialchars($g) ?></span>
-                <?php endforeach; ?>
-              </div>
-            </div>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <p class="text-muted" style="text-align:center; padding:2rem;">No versatility data available.</p>
-          <?php endif; ?>
-        </div>
-
+      <!-- Row 2: Actor Pairs -->
+      <div style="margin-bottom: 1.5rem;">
         <!-- Repeat Actor Pairs -->
         <div class="card">
           <div class="section-label">FREQUENT CO-STARS</div>
