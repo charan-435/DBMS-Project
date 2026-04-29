@@ -244,7 +244,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
       </div>
 
       <!-- Custom Collaboration Analyzer -->
-      <div class="card" style="margin-top: 1.5rem; border: 1px solid var(--accent-glow);">
+      <div class="card" style="border: 1px solid var(--accent-glow);">
         <div class="section-label">CUSTOM ANALYZER</div>
         <div class="card-title-collab">Analyze Specific Collaborations</div>
         <p class="text-secondary" style="font-size: 0.85rem; margin-bottom: 1.25rem;">

@@ -24,18 +24,22 @@ $avatarColors = [
   <style>
     .actors-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
+      margin-bottom: 4rem;
     }
     .actor-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.75rem;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 280px;
     }
     .actor-card:hover {
       transform: translateY(-5px);
@@ -104,6 +108,7 @@ $avatarColors = [
         margin-top: 5rem;
         padding-top: 3rem;
         border-top: 1px solid var(--border-color);
+        margin-bottom: 5rem;
     }
     .filter-panel {
         background: var(--bg-card);
@@ -138,8 +143,8 @@ $avatarColors = [
     }
     .vault-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 1.25rem;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
     }
     .vault-card {
         background: var(--bg-card);
@@ -147,6 +152,9 @@ $avatarColors = [
         border-radius: var(--radius-lg);
         padding: 1.25rem;
         transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        min-height: 220px;
     }
     .vault-card:hover {
         border-color: var(--accent-primary);
@@ -278,7 +286,7 @@ $avatarColors = [
             <span class="actor-stat-value">&#x20B9;<?= formatRevenue($actor['total_revenue']) ?></span>
           </div>
           
-          <div style="margin-top: 1.5rem; position: relative; z-index: 2;">
+          <div style="margin-top: auto; padding-top: 1.5rem; position: relative; z-index: 2;">
             <a href="actor_details.php?id=<?= $actor['actor_id'] ?>" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.75rem;">View Career Profile</a>
           </div>
         </div>
@@ -418,7 +426,7 @@ $avatarColors = [
                     <span style="color: var(--text-muted);">Revenue</span>
                     <span style="font-weight: 700; color: var(--accent-green);">${actor.revenue_fmt}</span>
                 </div>
-                <a href="actor_details.php?id=${actor.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem;">VIEW PROFILE</a>
+                <a href="actor_details.php?id=${actor.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem; margin-top: auto;">VIEW PROFILE</a>
             </div>
         `).join('');
     }

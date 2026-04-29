@@ -82,54 +82,18 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         <div class="card">
           <div class="chart-label">REVENUE BREAKDOWN</div>
           <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem;">Genre Revenue Distribution</h2>
-          
-          <?php 
-            $maxRevenue = max(array_column($genreStats, 'total_revenue'));
-            if ($maxRevenue == 0) $maxRevenue = 1;
-          ?>
-          <?php foreach (array_slice($genreStats, 0, 5) as $index => $stat): 
-            $width = round(($stat['total_revenue'] / $maxRevenue) * 100);
-            $color = $barColors[$index % count($barColors)];
-          ?>
-          <div class="region-chart-item">
-            <div class="flex-row">
-              <span class="font-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($stat['primary_genre']) ?></span>
-              <span class="font-bold <?= $index === 0 ? 'text-accent' : 'text-secondary' ?>" style="font-size: 0.85rem;">
-                &#x20B9;<?= formatRevenue($stat['total_revenue']) ?>
-              </span>
-            </div>
-            <div class="region-bar-track"><div class="region-bar-fill" style="width: <?= $width ?>%; background-color: <?= $color ?>;"></div></div>
+          <div style="height: 300px;">
+            <canvas id="revenueGenreChart"></canvas>
           </div>
-          <?php endforeach; ?>
         </div>
 
         <!-- Regional/Language Stats -->
-        <div class="card" style="position: relative; overflow: hidden;">
-          <div style="position: absolute; right: -60px; bottom: -60px; width: 200px; height: 200px; border-radius: 50%; border: 35px solid rgba(255,255,255,0.02);"></div>
+        <div class="card">
           <div class="chart-label">REGIONAL CINEMA</div>
           <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1.5rem;">Language Distribution</h2>
-          
-          <?php if (!empty($langStats)):
-            $maxLang = max(array_column($langStats, 'movie_count'));
-            $totalLang=array_sum(array_column($langStats, 'movie_count'));
-            if ($maxLang == 0) $maxLang = 1;
-          ?>
-            <?php foreach ($langStats as $index => $lang):
-              $langName = $langMap[$lang['language']] ?? ucfirst($lang['language']);
-              $width = round(($lang['movie_count'] / $maxLang) * 100);
-              $color = $barColors[$index % count($barColors)];
-            ?>
-            <div class="region-chart-item">
-              <div class="flex-row">
-                <span class="font-semibold" style="font-size: 0.85rem;"><?= htmlspecialchars($langName) ?></span>
-                <span class="text-muted" style="font-size: 0.8rem;"><?= $lang['movie_count'] ?> films</span>
-              </div>
-              <div class="region-bar-track"><div class="region-bar-fill" style="width: <?= $width ?>%; background-color: <?= $color ?>;"></div></div>
-            </div>
-            <?php endforeach; ?>
-          <?php else: ?>
-            <p class="text-muted text-sm">Connect database for language data.</p>
-          <?php endif; ?>
+          <div style="height: 300px;">
+            <canvas id="languagePieChart"></canvas>
+          </div>
         </div>
       </div>
 
@@ -464,6 +428,86 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
     window.addEventListener('load', function() {
         renderGenreChips();
         updateGenreChart();
+
+        // 1. Revenue Genre Chart (Line)
+        const revCtx = document.getElementById('revenueGenreChart').getContext('2d');
+        const genreData = <?= json_encode(array_slice($genreStats, 0, 8)) ?>;
+        new Chart(revCtx, {
+            type: 'line',
+            data: {
+                labels: genreData.map(g => g.primary_genre),
+                datasets: [{
+                    label: 'Total Revenue (₹)',
+                    data: genreData.map(g => g.total_revenue),
+                    borderColor: 'rgba(227, 116, 5, 0.64)',
+                    backgroundColor: 'rgba(255, 106, 0, 0.32)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: 'var(--accent-primary)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          let label = context.dataset.label || '';
+                          if (label) label += ': ';
+                          if (context.parsed.y !== null) {
+                            const val = context.parsed.y;
+                            if (val >= 10000000) label += (val/10000000).toFixed(1) + ' Cr';
+                            else if (val >= 100000) label += (val/100000).toFixed(1) + ' L';
+                            else label += val.toLocaleString();
+                          }
+                          return label;
+                        }
+                      }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: '#8b8d9e' }, grid: { display: false } },
+                    y: { 
+                      ticks: { 
+                        color: '#8b8d9e',
+                        callback: function(value) {
+                          if (value >= 10000000) return (value/10000000).toFixed(1) + ' Cr';
+                          return value.toLocaleString();
+                        }
+                      }, 
+                      grid: { color: 'rgba(255,255,255,0.05)' } 
+                    }
+                }
+            }
+        });
+
+        // 2. Language Distribution Chart (Pie)
+        const langCtx = document.getElementById('languagePieChart').getContext('2d');
+        const langData = <?= json_encode($langStats) ?>;
+        const langNames = <?= json_encode($langMap) ?>;
+        new Chart(langCtx, {
+            type: 'pie',
+            data: {
+                labels: langData.map(l => langNames[l.language] || l.language),
+                datasets: [{
+                    data: langData.map(l => l.movie_count),
+                    backgroundColor: ['#f5c518', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24'],
+                    borderWidth: 1,
+                    borderColor: 'rgba(0,0,0,0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: '#8b8d9e', font: { size: 10 } } }
+                }
+            }
+        });
     });
   </script>
 </body>
