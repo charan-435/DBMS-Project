@@ -233,7 +233,6 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
       <?php endif; ?>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
 
     </div>
   </main>

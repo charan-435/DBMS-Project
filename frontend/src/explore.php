@@ -344,7 +344,6 @@ $genreTrend = $service->getGenreTrend();
          </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. NO-CODE ANALYTICS ENGINE.</div>
     </div>
   </main>
 

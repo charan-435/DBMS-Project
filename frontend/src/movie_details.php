@@ -778,7 +778,6 @@ $comments = $service->getMovieComments($movie['movie_id']);
         </div>
       </div>
 
-      <div class="page-footer">THE CINEMATIC LENS &copy; 2026.</div>
     </div>
   </main>
 
