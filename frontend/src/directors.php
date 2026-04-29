@@ -22,22 +22,18 @@ $avatarColors = [
   <style>
     .directors-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
-      margin-bottom: 40rem;
     }
     .director-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
-      padding: 1.75rem;
+      padding: 1.5rem;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 280px;
     }
     .director-card:hover {
       transform: translateY(-5px);
@@ -97,7 +93,6 @@ $avatarColors = [
         margin-top: 5rem;
         padding-top: 3rem;
         border-top: 1px solid var(--border-color);
-        margin-bottom: 5rem;
     }
     .filter-panel {
         background: var(--bg-card);
@@ -132,8 +127,8 @@ $avatarColors = [
     }
     .vault-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
     }
     .vault-card {
         background: var(--bg-card);
@@ -141,9 +136,6 @@ $avatarColors = [
         border-radius: var(--radius-lg);
         padding: 1.25rem;
         transition: all 0.2s;
-        display: flex;
-        flex-direction: column;
-        min-height: 220px;
     }
     .vault-card:hover {
         border-color: var(--accent-primary);
@@ -185,7 +177,7 @@ $avatarColors = [
         <p class="mt-4">The visionaries behind the lens—ranking the highest-rated and most commercially successful directors.</p>
       </div>
 
-      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Rated <em style="color: var(--accent-primary); font-style: italic;">Directors</em></h2>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Rated <em style="color: var(--accent-primary); font-style: italic;">Actors</em></h2>
       
       <div class="directors-grid">
         <?php foreach ($topDirectors as $i => $director): 
@@ -214,7 +206,7 @@ $avatarColors = [
             <span class="director-stat-value">&#x20B9;<?= formatRevenue($director['total_revenue']) ?></span>
           </div>
           
-          <div style="margin-top: auto; padding-top: 1.5rem; position: relative; z-index: 2;">
+          <div style="margin-top: 1.5rem; position: relative; z-index: 2;">
             <a href="director_details.php?id=<?= $director['director_id'] ?>" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.75rem;">View Directorial Profile</a>
           </div>
         </div>
@@ -355,7 +347,7 @@ $avatarColors = [
                     <span style="color: var(--text-muted);">Revenue</span>
                     <span style="font-weight: 700; color: var(--accent-green);">${director.revenue_fmt}</span>
                 </div>
-                <a href="director_details.php?id=${director.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem; margin-top: auto;">VIEW PROFILE</a>
+                <a href="director_details.php?id=${director.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem;">VIEW PROFILE</a>
             </div>
         `).join('');
     }
