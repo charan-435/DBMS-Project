@@ -5,9 +5,7 @@ require_once __DIR__ . '/components/utils.php';
 
 $service = new DataService();
 $genres  = $service->getAllGenres();
-$topActors = $service->getTopActorsDetailed(12);
-$mostVersatile = $service->getActorGenreVersatility(4);
-$revenueKings = $service->getTopActorsByRevenue(4);
+$topDirectors = $service->getTopDirectorsDetailed(12);
 
 $avatarColors = [
     ['#e8a57e', '#d4845a'], ['#5cd6b6', '#3bb89a'],
@@ -19,16 +17,16 @@ $avatarColors = [
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Cinematic Lens - Actors Leaderboard</title>
+  <title>The Cinematic Lens - Director Leaderboard</title>
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .actors-grid {
+    .directors-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
       margin-top: 2rem;
     }
-    .actor-card {
+    .director-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
@@ -37,12 +35,12 @@ $avatarColors = [
       position: relative;
       overflow: hidden;
     }
-    .actor-card:hover {
+    .director-card:hover {
       transform: translateY(-5px);
       border-color: var(--accent-primary);
       box-shadow: 0 10px 30px -10px rgba(129, 140, 248, 0.2);
     }
-    .actor-header {
+    .director-header {
       display: flex;
       align-items: center;
       gap: 1rem;
@@ -50,18 +48,18 @@ $avatarColors = [
       position: relative;
       z-index: 2;
     }
-    .actor-avatar {
+    .director-avatar {
       width: 60px;
       height: 60px;
       border-radius: 50%;
       flex-shrink: 0;
     }
-    .actor-name {
+    .director-name {
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--text-primary);
     }
-    .actor-rank {
+    .director-rank {
       position: absolute;
       top: -0.5rem;
       right: 0.5rem;
@@ -72,31 +70,22 @@ $avatarColors = [
       pointer-events: none;
       z-index: 1;
     }
-    .actor-stat-row {
+    .director-stat-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 0.75rem;
       font-size: 0.85rem;
     }
-    .actor-stat-label {
+    .director-stat-label {
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-size: 0.7rem;
       font-weight: 700;
     }
-    .actor-stat-value {
+    .director-stat-value {
       color: var(--text-secondary);
       font-weight: 700;
-    }
-    .highlight-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 3rem;
-    }
-    @media (max-width: 768px) {
-      .highlight-section { grid-template-columns: 1fr; }
     }
 
     /* Vault Styling */
@@ -183,123 +172,62 @@ $avatarColors = [
 
     <div class="page-content">
       <div class="insight-header">
-        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">PERFORMANCE ANALYTICS</p>
-        <h1>Actor<br>Leaderboard</h1>
-        <p class="mt-4">From box office titans to critical darlings—exploring the actors who define Indian cinema.</p>
+        <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">DIRECTORIAL EXCELLENCE</p>
+        <h1>Director<br>Leaderboard</h1>
+        <p class="mt-4">The visionaries behind the lens—ranking the highest-rated and most commercially successful directors.</p>
       </div>
 
-      <!-- Highlights -->
-      <div class="highlight-section">
-        <!-- Box Office Kings -->
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 700;">Box Office Kings</h2>
-            <span style="color: var(--accent-green);">&#x1F4B0;</span>
-          </div>
-          <?php foreach ($revenueKings as $index => $actor): 
-            $c = $avatarColors[$index % count($avatarColors)];
-          ?>
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--border-color);">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-               <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, <?= $c[0] ?>, <?= $c[1] ?>);"></div>
-               <div>
-                 <div class="font-semibold text-sm">
-                   <?php if (isset($actor['actor_id'])): ?>
-                     <a href="actor_details.php?id=<?= $actor['actor_id'] ?>" style="color: inherit; text-decoration: none;"><?= htmlspecialchars($actor['actor']) ?></a>
-                   <?php else: ?>
-                     <?= htmlspecialchars($actor['actor']) ?>
-                   <?php endif; ?>
-                 </div>
-                 <div class="text-xxs text-muted"><?= $actor['movie_count'] ?> BLOCKED BUSTERS</div>
-               </div>
-            </div>
-            <div style="text-align: right;">
-              <div class="text-sm font-bold text-accent">&#x20B9;<?= formatRevenue($actor['total_revenue']) ?></div>
-              <div class="text-xxs text-muted">TOTAL REVENUE</div>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
-
-        <!-- Most Versatile -->
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="font-size: 1.1rem; font-weight: 700;">Genre Versatility</h2>
-            <span style="color: var(--accent-primary);">&#x1F3AD;</span>
-          </div>
-          <?php foreach ($mostVersatile as $index => $actor): 
-            $c = $avatarColors[($index + 2) % count($avatarColors)];
-          ?>
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--border-color);">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-               <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, <?= $c[0] ?>, <?= $c[1] ?>);"></div>
-               <div>
-                 <div class="font-semibold text-sm">
-                   <a href="actor_details.php?id=<?= $actor['actor_id'] ?>" style="color: inherit; text-decoration: none;"><?= htmlspecialchars($actor['actor']) ?></a>
-                 </div>
-                 <div class="text-xxs text-muted"><?= $actor['genre_count'] ?> UNIQUE GENRES</div>
-               </div>
-            </div>
-            <div style="text-align: right;">
-              <div class="text-sm font-bold" style="color: var(--accent-green);"><?= isset($actor['avg_rating']) ? number_format($actor['avg_rating'], 1) : '—' ?></div>
-              <div class="text-xxs text-muted">AVG RATING</div>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-
-      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Prolific <em style="color: var(--accent-primary); font-style: italic;">Actors</em></h2>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">Top Rated <em style="color: var(--accent-primary); font-style: italic;">Auteurs</em></h2>
       
-      <div class="actors-grid">
-        <?php foreach ($topActors as $i => $actor): 
+      <div class="directors-grid">
+        <?php foreach ($topDirectors as $i => $director): 
           $c = $avatarColors[$i % count($avatarColors)];
         ?>
-        <div class="actor-card">
-          <div class="actor-rank">#<?= $i + 1 ?></div>
-          <div class="actor-header">
-            <div class="actor-avatar" style="background: linear-gradient(135deg, <?= $c[0] ?>, <?= $c[1] ?>);"></div>
+        <div class="director-card">
+          <div class="director-rank">#<?= $i + 1 ?></div>
+          <div class="director-header">
+            <div class="director-avatar" style="background: linear-gradient(135deg, <?= $c[0] ?>, <?= $c[1] ?>);"></div>
             <div>
-              <div class="actor-name"><?= htmlspecialchars($actor['name']) ?></div>
-              <div class="text-xxs text-accent font-bold mt-1">ESTABLISHED STAR</div>
+              <div class="director-name"><?= htmlspecialchars($director['name']) ?></div>
+              <div class="text-xxs text-accent font-bold mt-1">MASTER AUTEUR</div>
             </div>
           </div>
           
-          <div class="actor-stat-row">
-            <span class="actor-stat-label">Total Films</span>
-            <span class="actor-stat-value"><?= $actor['movie_count'] ?></span>
+          <div class="director-stat-row">
+            <span class="director-stat-label">Total Films</span>
+            <span class="director-stat-value"><?= $director['total_films'] ?></span>
           </div>
-          <div class="actor-stat-row">
-            <span class="actor-stat-label">Avg Rating</span>
-            <span class="actor-stat-value"><?= number_format($actor['avg_rating'], 1) ?></span>
+          <div class="director-stat-row">
+            <span class="director-stat-label">Avg Rating</span>
+            <span class="director-stat-value"><?= number_format($director['avg_rating'], 1) ?></span>
           </div>
-          <div class="actor-stat-row">
-            <span class="actor-stat-label">Total Revenue</span>
-            <span class="actor-stat-value">&#x20B9;<?= formatRevenue($actor['total_revenue']) ?></span>
+          <div class="director-stat-row">
+            <span class="director-stat-label">Total Revenue</span>
+            <span class="director-stat-value">&#x20B9;<?= formatRevenue($director['total_revenue']) ?></span>
           </div>
           
           <div style="margin-top: 1.5rem; position: relative; z-index: 2;">
-            <a href="actor_details.php?id=<?= $actor['actor_id'] ?>" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.75rem;">View Career Profile</a>
+            <a href="director_details.php?id=<?= $director['director_id'] ?>" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.75rem;">View Directorial Profile</a>
           </div>
         </div>
         <?php endforeach; ?>
       </div>
 
-      <!-- Actor Vault Section -->
+      <!-- Director Vault Section -->
       <div class="vault-section">
         <div style="margin-bottom: 2rem;">
-            <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">ACTOR DIRECTORY</p>
-            <h2 style="font-size: 2rem; font-weight: 800;">The Actor <span style="color: var(--accent-primary);">Vault</span></h2>
-            <p class="text-muted">Explore the complete database of actors across all genres and eras.</p>
+            <p class="text-accent uppercase tracking-wider text-xxs mb-2 font-bold">DIRECTOR DIRECTORY</p>
+            <h2 style="font-size: 2rem; font-weight: 800;">The Director <span style="color: var(--accent-primary);">Vault</span></h2>
+            <p class="text-muted">Browse all directors in our database and filter by their cinematic contributions.</p>
         </div>
 
         <div class="filter-panel">
             <div class="filter-group" style="flex: 1;">
                 <label>Search Name</label>
-                <input type="text" id="f-search" placeholder="Search actors..." autocomplete="off">
+                <input type="text" id="f-search" placeholder="Search directors...">
             </div>
             <div class="filter-group">
-                <label>Genre Association</label>
+                <label>Genre Specialization</label>
                 <select id="f-genre">
                     <option value="">All Genres</option>
                     <?php foreach ($genres as $g): ?>
@@ -328,8 +256,8 @@ $avatarColors = [
             <div class="filter-group">
                 <label>Sort By</label>
                 <select id="f-sort">
+                    <option value="avg_rating" selected>Avg Rating</option>
                     <option value="total_revenue">Total Revenue</option>
-                    <option value="avg_rating">Avg Rating</option>
                     <option value="total_films">Movie Count</option>
                     <option value="name">Name</option>
                 </select>
@@ -353,6 +281,7 @@ $avatarColors = [
         </div>
       </div>
 
+      <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
 
@@ -372,7 +301,7 @@ $avatarColors = [
     async function loadVault(page = 1) {
         currentPage = page;
         const q = new URLSearchParams({
-            type: 'actor',
+            type: 'director',
             page: page,
             search: fSearch.value,
             genre: fGenre.value,
@@ -383,7 +312,7 @@ $avatarColors = [
             order: fOrder.value
         });
 
-        vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">Syncing Actor Data...</div>';
+        vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">Syncing Director Data...</div>';
 
         try {
             const res = await fetch(`api/people_api.php?${q}`);
@@ -395,30 +324,30 @@ $avatarColors = [
         }
     }
 
-    function renderVault(actors) {
-        if (actors.length === 0) {
-            vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">No actors found matching your filters.</div>';
+    function renderVault(directors) {
+        if (directors.length === 0) {
+            vaultList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted);">No directors found matching your filters.</div>';
             return;
         }
 
-        vaultList.innerHTML = actors.map(actor => `
+        vaultList.innerHTML = directors.map(director => `
             <div class="vault-card">
                 <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-highlight); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🎭</div>
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--bg-highlight); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🎥</div>
                     <div>
-                        <div style="font-weight: 800; font-size: 0.95rem;">${actor.name}</div>
-                        <div style="font-size: 0.65rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase;">${actor.total_films} FILMS</div>
+                        <div style="font-weight: 800; font-size: 0.95rem;">${director.name}</div>
+                        <div style="font-size: 0.65rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase;">${director.total_films} FILMS</div>
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.5rem;">
                     <span style="color: var(--text-muted);">Avg Rating</span>
-                    <span style="font-weight: 700; color: #f5c518;">★ ${parseFloat(actor.avg_rating).toFixed(1)}</span>
+                    <span style="font-weight: 700; color: #f5c518;">★ ${parseFloat(director.avg_rating).toFixed(1)}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 1rem;">
                     <span style="color: var(--text-muted);">Revenue</span>
-                    <span style="font-weight: 700; color: var(--accent-green);">${actor.revenue_fmt}</span>
+                    <span style="font-weight: 700; color: var(--accent-green);">${director.revenue_fmt}</span>
                 </div>
-                <a href="actor_details.php?id=${actor.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem;">VIEW PROFILE</a>
+                <a href="director_details.php?id=${director.id}" class="btn-outline" style="width: 100%; text-align: center; display: block; font-size: 0.7rem; padding: 0.5rem;">VIEW PROFILE</a>
             </div>
         `).join('');
     }
@@ -451,14 +380,14 @@ $avatarColors = [
             window.searchTimeout = setTimeout(() => loadVault(1), 300);
         });
     });
-
+ 
     btnReset.addEventListener('click', () => {
         fSearch.value = '';
         fGenre.value = '';
         fMinRating.value = '';
         fMinYear.value = '';
         fMaxYear.value = '';
-        fSort.value = 'total_revenue';
+        fSort.value = 'avg_rating';
         fOrder.value = 'DESC';
         loadVault(1);
     });
