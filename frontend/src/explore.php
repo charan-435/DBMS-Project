@@ -740,7 +740,7 @@ $genreTrend = $service->getGenreTrend();
     }
 
     // Auto-run first insight or from URL params
-    window.onload = function() {
+    document.addEventListener('DOMContentLoaded', function() {
       const urlParams = new URLSearchParams(window.location.search);
       const q = urlParams.get('q');
       
@@ -821,7 +821,7 @@ $genreTrend = $service->getGenreTrend();
               }
           }
       });
-    };
+    });
   </script>
 </body>
 </html>

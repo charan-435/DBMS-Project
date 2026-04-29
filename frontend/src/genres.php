@@ -124,7 +124,11 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           </div>
         </div>
         
-        <div style="height: 350px;">
+        <div style="height: 350px; position: relative;">
+           <div id="trend-loading" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(18, 18, 24, 0.7); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: 8px;">
+             <div class="loading-spinner"></div>
+             <span style="margin-left: 10px; color: var(--accent-primary); font-weight: bold; font-size: 0.8rem;">FETCHING TREND DATA...</span>
+           </div>
            <canvas id="genreTrendChart"></canvas>
         </div>
       </div>
@@ -394,6 +398,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
 
     async function updateGenreChart() {
         if (selectedGenresList.length === 0) { alert('Please select at least one genre to plot.'); return; }
+        document.getElementById('trend-loading').style.display = 'flex';
 
         const resp = await fetch('api_explore.php', {
             method: 'POST',
@@ -402,9 +407,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         });
         const result = await resp.json();
         
-        if (result.status !== 'success' || !result.data || result.data.length === 0) return;
-        
         const data = result.data;
+        document.getElementById('trend-loading').style.display = 'none';
+        
+        if (result.status !== 'success' || !result.data || result.data.length === 0) return;
         const years = data.map(d => parseInt(d.yr));
         
         const datasets = selectedGenresList.map((genre, i) => {
@@ -425,7 +431,7 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         renderGenreChart(years, datasets);
     }
     
-    window.addEventListener('load', function() {
+    document.addEventListener('DOMContentLoaded', function() {
         renderGenreChips();
         updateGenreChart();
 

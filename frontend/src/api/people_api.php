@@ -13,6 +13,7 @@ $genre  = $_GET['genre'] ?? '';
 $min_rating = $_GET['min_rating'] ?? '';
 $min_year   = $_GET['min_year'] ?? '';
 $max_year   = $_GET['max_year'] ?? '';
+$lang       = $_GET['lang'] ?? '';
 $sort   = $_GET['sort'] ?? 'total_revenue';
 $order  = $_GET['order'] ?? 'DESC';
 
@@ -22,6 +23,7 @@ $filters = [
     'min_rating' => $min_rating,
     'min_year'   => $min_year,
     'max_year'   => $max_year,
+    'lang'       => $lang,
     'sort'   => $sort,
     'order'  => $order
 ];
