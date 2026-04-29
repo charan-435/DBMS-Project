@@ -19,10 +19,10 @@ class Database {
                 
                 // Now connect TO the specific database
                 self::$conn = new PDO(
-    "mysql:host=" . self::$host . ";port =3307;dbname=" . self::$db_name . ";charset=utf8",
-    self::$username,
-    self::$password
-);
+                    "mysql:host=" . self::$host . ";port=3306;dbname=" . self::$db_name . ";charset=utf8",
+                    self::$username,
+                    self::$password
+                );
                 self::$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
             } catch(PDOException $exception) {

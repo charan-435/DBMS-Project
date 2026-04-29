@@ -11,8 +11,6 @@ $totalRevenue = $service->getTotalRevenue();
 $mostActiveGenre = $service->getMostActiveGenre();
 $totalMovies = $service->getTotalMovies();
 
-// Genre Trend (Action vs Romance by year)
-$genreTrend = $service->getGenreTrend();
 
 // Trending Movies
 $trending = $service->getTrendingMovies(5);
@@ -49,11 +47,11 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         <div class="hero-label">FEATURED PERSPECTIVE</div>
         <h1 class="hero-title">Cinema at a Glance</h1>
         <p class="hero-desc">
-          Tracing the soul of Indian storytelling through two decades of metadata, box office triumphs, and the eternal clash of Action vs. Romance.
+          Tracing the soul of Indian storytelling through two decades of metadata, box office triumphs, and genre performance insights.
         </p>
         <div class="hero-actions">
           <a href="genres.php" class="btn-accent">Explore Trends &#x2197;</a>
-          <a href="industry.php" class="btn-outline">Regional Insights</a>
+          <a href="insights.php" class="btn-outline">Genre Comparisons</a>
         </div>
       </div>
 
@@ -128,98 +126,37 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
         </div>
       </div>
 
-      <!-- MIDDLE ROW: Chart + Editorial -->
-      <div class="middle-row">
-        <!-- Bar Chart -->
-        <div class="card">
-          <div class="chart-label">PRODUCTION VELOCITY</div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-            <div class="chart-title">20-Year Trend: Action vs. Romance</div>
-            <div class="chart-legend">
-              <div class="legend-item"><span class="legend-dot" style="background: var(--accent-primary);"></span> Action</div>
-              <div class="legend-item"><span class="legend-dot" style="background: var(--accent-green);"></span> Romance</div>
-            </div>
-          </div>
-
-          <?php
-            // Build year-grouped data
-            $chartData = [];
-            foreach ($genreTrend as $row) {
-                $yr = (int)$row['yr'];
-                $chartData[$yr] = $row;
-            }
-            // Pick evenly spaced years
-            $years = array_keys($chartData);
-            if (empty($years)) $years = [2006, 2008, 2010, 2012, 2014, 2016];
-            $maxAction = max(array_column($genreTrend ?: [['action_count' => 1]], 'action_count'));
-            $maxRomance = max(array_column($genreTrend ?: [['romance_count' => 1]], 'romance_count'));
-            $maxVal = max($maxAction, $maxRomance, 1);
-          ?>
-
-          <div style="display: flex; gap: 12px;">
-            <div style="display: flex; flex-direction: column; justify-content: space-between; height: 160px; font-size: 0.65rem; color: var(--text-muted); text-align: right; padding-bottom: 0.75rem; min-width: 25px;">
-              <span><?= $maxVal ?></span>
-              <span><?= round($maxVal / 2) ?></span>
-              <span>0</span>
-            </div>
-            <div style="flex: 1;">
-              <div class="bar-chart">
-                <?php foreach ($chartData as $yr => $data): 
-                  $actionH = round(($data['action_count'] / $maxVal) * 100);
-                  $romanceH = round(($data['romance_count'] / $maxVal) * 100);
-                ?>
-                  <div class="bar-group" title="<?= $yr ?>: Action (<?= $data['action_count'] ?>), Romance (<?= $data['romance_count'] ?>)">
-                    <div class="bar bar-action" style="height: <?= max($actionH, 3) ?>%;"></div>
-                    <div class="bar bar-romance" style="height: <?= max($romanceH, 3) ?>%;"></div>
+      <!-- MIDDLE ROW: Trending Movies (full width) -->
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="chart-label">BOX OFFICE HOTSTREAK</div>
+        <div class="chart-title" style="margin-bottom: 1rem;">Trending Blockbusters</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.8rem;">
+          <?php if (!empty($trending)): ?>
+            <?php foreach ($trending as $idx => $movie): ?>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1rem; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-muted); opacity: 0.5; min-width:28px;"><?= str_pad($idx + 1, 2, '0', STR_PAD_LEFT) ?></div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.95rem;">
+                    <a href="movie_details.php?id=<?= $movie['movie_id'] ?>" style="color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($movie['title']) ?></a>
                   </div>
-                <?php endforeach; ?>
+                  <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                    <a href="director_details.php?id=<?= $movie['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($movie['director']) ?></a> &bull; <?= htmlspecialchars($movie['yr']) ?>
+                  </div>
+                </div>
               </div>
-
-              <div class="chart-years">
-                <?php 
-                  $dispYears = array_keys($chartData);
-                  $step = max(1, floor(count($dispYears) / 6));
-                  for ($i = 0; $i < count($dispYears); $i += $step) {
-                      echo '<span>' . $dispYears[$i] . '</span>';
-                  }
-                ?>
+              <div style="text-align: right; padding-left:0.5rem; flex-shrink:0;">
+                <div style="font-weight: 700; color: var(--accent-primary); font-size: 0.9rem;">&#x20B9;<?= formatRevenue($movie['revenue']) ?></div>
+                <div style="font-size: 0.75rem; color: var(--accent-green);">&#x2B50; <?= number_format($movie['rating_imdb'], 1) ?></div>
               </div>
             </div>
-          </div>
+            <?php endforeach; ?>
+          <?php else: ?>
+            <div style="text-align: center; color: var(--text-muted); padding: 2rem 0; grid-column: 1/-1;">No trending movies available.</div>
+          <?php endif; ?>
         </div>
-
-        <!-- Trending Movies List -->
-        <div class="card" style="display: flex; flex-direction: column;">
-          <div class="chart-label">BOX OFFICE HOTSTREAK</div>
-          <div class="chart-title" style="margin-bottom: 1rem;">Trending Blockbusters</div>
-          <div style="display: flex; flex-direction: column; gap: 0.8rem; flex: 1;">
-            <?php if (!empty($trending)): ?>
-              <?php foreach ($trending as $idx => $movie): ?>
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border-color);">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <div style="font-size: 1.2rem; font-weight: 800; color: var(--text-muted); opacity: 0.5;">0<?= $idx + 1 ?></div>
-                  <div>
-                    <div style="font-weight: 700; font-size: 0.95rem;">
-                      <a href="movie_details.php?id=<?= $movie['movie_id'] ?>" style="color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($movie['title']) ?></a>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                      <a href="director_details.php?id=<?= $movie['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><?= htmlspecialchars($movie['director']) ?></a> &bull; <?= htmlspecialchars($movie['yr']) ?>
-                    </div>
-                  </div>
-                </div>
-                <div style="text-align: right;">
-                  <div style="font-weight: 700; color: var(--accent-primary); font-size: 0.9rem;">&#x20B9;<?= formatRevenue($movie['revenue']) ?></div>
-                  <div style="font-size: 0.75rem; color: var(--accent-green);">&#x2B50; <?= number_format($movie['rating_imdb'], 1) ?></div>
-                </div>
-              </div>
-              <?php endforeach; ?>
-            <?php else: ?>
-              <div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">No trending movies available.</div>
-            <?php endif; ?>
-          </div>
-          <div style="text-align: center; margin-top: 1rem;">
-            <a href="movies.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
-          </div>
+        <div style="text-align: center; margin-top: 1rem;">
+          <a href="movies.php" class="btn-outline" style="font-size: 0.7rem; padding: 0.5rem 1rem;">View All Movies</a>
         </div>
       </div>
 

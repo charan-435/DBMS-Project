@@ -45,5 +45,16 @@ if ($action === 'get_trend_analysis') {
     exit;
 }
 
+if ($action === 'get_genre_comparison') {
+    $genres = $input['genres'] ?? ['Action', 'Romance'];
+    if (!is_array($genres)) {
+        $genres = [$genres];
+    }
+    $data = $service->getMultipleGenreTrend($genres);
+    ob_clean();
+    echo json_encode(['status' => 'success', 'data' => $data]);
+    exit;
+}
+
 ob_clean();
 echo json_encode(['status' => 'error', 'message' => 'Invalid action']);

@@ -20,6 +20,8 @@ $bestYearPerGenre = $service2->getBestYearPerGenre();
 
 $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'Tollywood (Telugu)', 'ml' => 'Mollywood (Malayalam)', 'kn' => 'Sandalwood (Kannada)', 'en' => 'English'];
 
+$allGenres = $service->getSingleGenres();
+
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee', '#f97316'];
 ?>
 <!DOCTYPE html>
@@ -130,6 +132,34 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         </div>
       </div>
 
+      <!-- Dynamic Genre Network Comparison Graph -->
+      <div class="card" style="margin-bottom: 2rem;">
+        <div class="chart-label">TREND INTELLIGENCE</div>
+        <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">Multi-Genre Production Overlay</h2>
+        
+        <!-- Genre Selection Controls -->
+        <div style="margin-bottom: 1.5rem;">
+          <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem;" id="selected-genres-list">
+            <!-- Selected genres go here -->
+          </div>
+            
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <select id="genre-picker" class="builder-input" style="padding: 0.65rem 1rem; flex: 1; max-width: 300px; border-radius: 20px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary);">
+              <option value="">-- Select Genre --</option>
+              <?php foreach ($allGenres as $g): ?>
+                <option value="<?= htmlspecialchars($g['genre_name']) ?>"><?= htmlspecialchars($g['genre_name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+            <button class="btn-outline" onclick="addGenre()">Add Genre</button>
+            <button class="btn-accent" onclick="updateGenreChart()">Update Graph</button>
+          </div>
+        </div>
+        
+        <div style="height: 350px;">
+           <canvas id="genreTrendChart"></canvas>
+        </div>
+      </div>
+
       <!-- Top Grossing Films Table -->
       <div class="card">
         <div class="trending-header">
@@ -161,12 +191,16 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                   <div class="film-cell">
                     <div class="film-poster">&#x1F3AC;</div>
                     <div>
-                      <div class="film-name"><?= htmlspecialchars($movie['title']) ?></div>
+                      <div class="film-name">
+                        <a href="movie_details.php?id=<?= $movie['movie_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($movie['title']) ?></a>
+                      </div>
                       <div class="film-meta"><?= $langLabel ?></div>
                     </div>
                   </div>
                 </td>
-                <td><?= htmlspecialchars($movie['director']) ?></td>
+                <td>
+                  <a href="director_details.php?id=<?= $movie['director_id'] ?>" style="color:inherit; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($movie['director']) ?></a>
+                </td>
                 <td><span class="genre-badge <?= $genreClass ?>"><?= htmlspecialchars(strtoupper($primaryGenre)) ?></span></td>
                 <td class="font-bold">&#x20B9;<?= formatRevenue($movie['revenue']) ?></td>
                 <td>
@@ -274,5 +308,97 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
       <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    let genreChart = null;
+    let selectedGenresList = ['Action', 'Romance'];
+    const barColors = ['rgba(245, 197, 24, 0.85)', 'rgba(92, 214, 182, 0.85)', 'rgba(110, 168, 254, 0.85)', 'rgba(166, 141, 255, 0.85)', 'rgba(255, 130, 150, 0.85)', 'rgba(251, 191, 36, 0.85)', 'rgba(34, 211, 238, 0.85)'];
+    const borderColors = ['#f5c518', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee'];
+
+    function renderGenreChips() {
+        const container = document.getElementById('selected-genres-list');
+        container.innerHTML = selectedGenresList.map((g, i) => `
+            <div style="background: var(--accent-glow); color: var(--accent-primary); border: 1px solid var(--accent-primary); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; animation: slideDown 0.2s ease-out;">
+                ${g} <span style="cursor:pointer; font-size: 1.1rem; line-height: 1; opacity: 0.7;" onclick="removeGenre('${g}')">&times;</span>
+            </div>
+        `).join('');
+    }
+
+    function addGenre() {
+        const picker = document.getElementById('genre-picker');
+        const val = picker.value;
+        if (val && !selectedGenresList.includes(val) && selectedGenresList.length < 7) {
+            selectedGenresList.push(val);
+            picker.value = '';
+            renderGenreChips();
+        } else if (selectedGenresList.length >= 7) {
+            alert('Maximum 7 genres allowed at once.');
+        }
+    }
+
+    function removeGenre(g) {
+        selectedGenresList = selectedGenresList.filter(x => x !== g);
+        renderGenreChips();
+    }
+
+    async function updateGenreChart() {
+        if (selectedGenresList.length === 0) {
+            alert('Please select at least one genre to plot.');
+            return;
+        }
+
+        const resp = await fetch('api_explore.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_genre_comparison', genres: selectedGenresList })
+        });
+        const result = await resp.json();
+        
+        if (result.status !== 'success' || !result.data || result.data.length === 0) return;
+        
+        const data = result.data;
+        const years = data.map(d => parseInt(d.yr));
+        
+        const datasets = selectedGenresList.map((genre, i) => {
+            const countKey = 'count' + i;
+            const counts = data.map(d => parseInt(d[countKey] || 0));
+            return {
+                label: genre,
+                data: counts,
+                backgroundColor: barColors[i % barColors.length],
+                borderColor: borderColors[i % borderColors.length],
+                borderWidth: 1,
+                borderRadius: 4
+            };
+        });
+        
+        const ctx = document.getElementById('genreTrendChart').getContext('2d');
+        if (genreChart) {
+            genreChart.destroy();
+        }
+        
+        genreChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: years, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { color: '#8b8d9e', font: { size: 11, weight: 'bold' }, usePointStyle: true, padding: 15 } },
+                    tooltip: { backgroundColor: '#1e1f2a', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8b8d9e', padding: 10 }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e', font: { size: 10 } }, beginAtZero: true }
+                }
+            }
+        });
+    }
+    
+    window.addEventListener('load', function() {
+        renderGenreChips();
+        updateGenreChart();
+    });
+  </script>
 </body>
 </html>

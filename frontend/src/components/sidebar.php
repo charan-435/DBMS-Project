@@ -13,9 +13,6 @@
     <a href="explore.php" class="nav-item <?= ($currentPage == 'explore.php') ? 'active' : '' ?>">
       Explore Data
     </a>
-    <a href="index.php" class="nav-item <?= ($currentPage == 'index.php') ? 'active' : '' ?>">
-      Directors
-    </a>
     <a href="genres.php" class="nav-item <?= ($currentPage == 'genres.php') ? 'active' : '' ?>">
       Genres
     </a>
@@ -24,7 +21,7 @@
     </a>
     <a href="collaborations.php" class="nav-item <?= ($currentPage == 'collaborations.php') ? 'active' : '' ?>">
       Collaborations
-    
+    </a>
     <a href="industry.php" class="nav-item <?= ($currentPage == 'industry.php') ? 'active' : '' ?>">
      Regional Stats
     </a>

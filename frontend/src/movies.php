@@ -398,6 +398,14 @@ $currentYear = date('Y');
       });
     }
 
+    // ── Set search field and filter movies (for actor/director clicks) ─────
+    // Make setSearchAndFilter global so it can be called from inline onclicks
+    window.setSearchAndFilter = (name) => {
+      fSearch.value = name;
+      dropdown.style.display = 'none';
+      updateVault(1);
+    };
+
     // ── Main fetch & render ────────────────────────────────────────
     async function updateVault(page = 1) {
       currentPage = page;
@@ -504,16 +512,26 @@ $currentYear = date('Y');
         try { results = JSON.parse(text); } catch(e) { dropdown.style.display='none'; return; }
         if (!results.length) { dropdown.style.display = 'none'; return; }
         dropdown.innerHTML = results.map(r => {
-          const href = (r.type === 'movie')
-            ? `movie_details.php?id=${r.id}`
-            : `${r.type}_details.php?id=${r.id}`;
-          return `<div class="sd-item" onclick="location.href='${href}'">
-            <div>
-              <div class="name">${r.name}</div>
-              ${r.meta ? `<div class="meta">${r.meta}</div>` : ''}
-            </div>
-            <span class="sd-badge">${r.type}</span>
-          </div>`;
+          // For movies, go to movie details; for actors/directors, set search field to filter movies
+          if (r.type === 'movie') {
+            const href = `movie_details.php?id=${r.id}`;
+            return `<div class="sd-item" onclick="location.href='${href}'">
+              <div>
+                <div class="name">${r.name}</div>
+                ${r.meta ? `<div class="meta">${r.meta}</div>` : ''}
+              </div>
+              <span class="sd-badge">${r.type}</span>
+            </div>`;
+          } else {
+            // For actors/directors, set the search field and filter movies
+            return `<div class="sd-item" onclick="setSearchAndFilter('${r.name.replace(/'/g, "\\'")}')">
+              <div>
+                <div class="name">${r.name}</div>
+                ${r.meta ? `<div class="meta">${r.meta}</div>` : ''}
+              </div>
+              <span class="sd-badge">${r.type}</span>
+            </div>`;
+          }
         }).join('');
         dropdown.style.display = 'block';
       } catch(e) { dropdown.style.display = 'none'; }
