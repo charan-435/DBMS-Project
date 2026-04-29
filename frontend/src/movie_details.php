@@ -3,7 +3,11 @@ require_once __DIR__ . '/components/session.php';
 require_once __DIR__ . '/../../backend/DataService.php';
 require_once __DIR__ . '/components/utils.php';
 
-$movieId = $_GET['id'] ?? null;
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+
+$movieId = (int)($_GET['id'] ?? 0);
 if (!$movieId) {
   header("Location: movies.php");
   exit;
@@ -72,6 +76,11 @@ if (!empty($movie['cast'])) {
   $leadActorId = $movie['cast'][0]['actor_id'];
   $synergy = $service->getDirectorActorCollaboration($movie['director_id'], $leadActorId);
 }
+
+// User-specific state
+$userId = $_SESSION['user_id'];
+$inWatchlist = $service->isInWatchlist($userId, $movie['movie_id']);
+$comments = $service->getMovieComments($movie['movie_id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -478,6 +487,17 @@ if (!empty($movie['cast'])) {
                 <?= $ratingDiff >= 0 ? '+' : '' ?><?= $ratingDiff ?> vs platform avg (<?= $platformAvgRating ?>)
               </div>
             </div>
+            <div style="margin-left: auto;">
+                <?php if ($inWatchlist): ?>
+                    <button id="watchlist-btn" onclick="toggleWatchlist()" class="btn-outline" style="font-size: 0.75rem; border-radius: 20px; border-color: var(--accent-green); color: var(--accent-green);">
+                        ✓ ADDED TO WATCHLIST
+                    </button>
+                <?php else: ?>
+                    <button id="watchlist-btn" onclick="toggleWatchlist()" class="btn-accent" style="font-size: 0.75rem; border-radius: 20px;">
+                        ✚ ADD TO WATCHLIST
+                    </button>
+                <?php endif; ?>
+            </div>
           </div>
 
           <div class="insights-row">
@@ -619,6 +639,33 @@ if (!empty($movie['cast'])) {
                 </div>
               <?php endif; ?>
 
+            </div>
+          </div>
+
+          <!-- ── COMMUNITY DISCUSSION ── -->
+          <div class="info-card" style="margin-top: 3rem;">
+            <h3>Community Discussion</h3>
+            <div style="margin-bottom: 2rem;">
+                <textarea id="comment-text" placeholder="Write an anonymous-style comment..." style="width: 100%; min-height: 80px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-primary); padding: 1rem; font-family: inherit; resize: vertical; margin-bottom: 0.75rem;"></textarea>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button onclick="submitComment()" class="btn-accent" style="font-size: 0.75rem;">POST COMMENT</button>
+                </div>
+            </div>
+
+            <div id="comments-container">
+                <?php if (empty($comments)): ?>
+                    <p style="color:var(--text-muted); font-size: 0.85rem; text-align: center; padding: 2rem 0;">No comments yet. Be the first to share your thoughts!</p>
+                <?php else: ?>
+                    <?php foreach ($comments as $c): ?>
+                        <div style="padding: 1.25rem 0; border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; align-items: center;">
+                                <span style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase;">Anonymous Guest</span>
+                                <span style="font-size: 0.65rem; color: var(--text-muted);"><?= date('M d, Y', strtotime($c['created_at'])) ?></span>
+                            </div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5;"><?= nl2br(htmlspecialchars($c['content'])) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
           </div>
         </div>
@@ -923,6 +970,64 @@ if (!empty($movie['cast'])) {
       <?php endif; ?>
 
     }); // end window.load
+
+    // ── Interaction Logic ──────────────────────────────────────────────────
+    async function toggleWatchlist() {
+        const btn = document.getElementById('watchlist-btn');
+        btn.disabled = true;
+        try {
+            const res = await fetch('api_user.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'toggle_watchlist', movie_id: <?= $movie['movie_id'] ?> })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                if (data.status_code === 'added' || data.status === 'success' && data.status_msg !== 'removed') {
+                    // Logic from backend returns {status: 'added'} or {status: 'removed'}
+                }
+                // Update button based on actual status returned from backend
+                if (data.status === 'added') {
+                    btn.innerText = '✓ ADDED TO WATCHLIST';
+                    btn.className = 'btn-outline';
+                    btn.style.borderColor = 'var(--accent-green)';
+                    btn.style.color = 'var(--accent-green)';
+                } else {
+                    btn.innerText = '✚ ADD TO WATCHLIST';
+                    btn.className = 'btn-accent';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }
+            }
+        } catch (e) {
+            console.error('Watchlist error:', e);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function submitComment() {
+        const txt = document.getElementById('comment-text');
+        const content = txt.value.trim();
+        if (!content) return;
+
+        try {
+            const res = await fetch('api_user.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'post_comment', movie_id: <?= $movie['movie_id'] ?>, content: content })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                txt.value = '';
+                location.reload(); // Simple way to show new comment
+            } else {
+                alert('Error posting comment: ' + (data.message || 'Unknown error'));
+            }
+        } catch (e) {
+            console.error('Comment error:', e);
+        }
+    }
   </script>
 </body>
 

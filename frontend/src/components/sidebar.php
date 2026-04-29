@@ -28,8 +28,8 @@
   </nav>
 
   <div class="sidebar-bottom">
-    <a href="manage.php" class="nav-item <?= ($currentPage == 'manage.php') ? 'active' : '' ?>">
-       Manage Records
+    <a href="mylist.php" class="nav-item <?= ($currentPage == 'mylist.php') ? 'active' : '' ?>">
+       My List
     </a>
     <?php if (isset($_SESSION['user_name'])): ?>
       <div style="padding: 1rem 0.75rem 0.5rem; font-size: 0.7rem; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 0.5rem;">

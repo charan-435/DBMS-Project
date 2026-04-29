@@ -1749,6 +1749,88 @@ class DataService
         }
     }
 
+    // ── Watchlist Management ────────────────────────────────────────────────
+    public function toggleWatchlist($userId, $movieId)
+    {
+        if (!$this->conn) return false;
+        try {
+            if ($this->isInWatchlist($userId, $movieId)) {
+                $stmt = $this->conn->prepare("DELETE FROM Watchlist WHERE user_id = :uid AND movie_id = :mid");
+                $stmt->execute(['uid' => $userId, 'mid' => $movieId]);
+                return ['status' => 'removed'];
+            } else {
+                $stmt = $this->conn->prepare("INSERT INTO Watchlist (user_id, movie_id) VALUES (:uid, :mid)");
+                $stmt->execute(['uid' => $userId, 'mid' => $movieId]);
+                return ['status' => 'added'];
+            }
+        } catch (PDOException $e) { return false; }
+    }
+
+    public function isInWatchlist($userId, $movieId)
+    {
+        try {
+            $stmt = $this->conn->prepare("SELECT 1 FROM Watchlist WHERE user_id = :uid AND movie_id = :mid");
+            $stmt->execute(['uid' => $userId, 'mid' => $movieId]);
+            return (bool)$stmt->fetch();
+        } catch (PDOException $e) { return false; }
+    }
+
+    public function getWatchlist($userId)
+    {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT m.movie_id, m.title, m.release_year, m.rating_imdb, m.revenue, g.genre_name
+                FROM Movies m
+                JOIN Watchlist w ON m.movie_id = w.movie_id
+                JOIN Genres g ON m.genre_id = g.genre_id
+                WHERE w.user_id = :uid
+                ORDER BY m.release_year DESC
+            ");
+            $stmt->execute(['uid' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
+    }
+
+    // ── Movie Comments ──────────────────────────────────────────────────────
+    public function addComment($userId, $movieId, $content)
+    {
+        if (!$this->conn) return false;
+        try {
+            $stmt = $this->conn->prepare("INSERT INTO Movie_Comments (user_id, movie_id, content) VALUES (:uid, :mid, :txt)");
+            return $stmt->execute(['uid' => $userId, 'mid' => $movieId, 'txt' => trim($content)]);
+        } catch (PDOException $e) { return false; }
+    }
+
+    public function getMovieComments($movieId)
+    {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT c.content, c.created_at, u.full_name
+                FROM Movie_Comments c
+                JOIN Users u ON c.user_id = u.user_id
+                WHERE c.movie_id = :mid
+                ORDER BY c.created_at DESC
+            ");
+            $stmt->execute(['mid' => $movieId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
+    }
+
+    public function getUserComments($userId)
+    {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT c.content, c.created_at, m.title, m.movie_id
+                FROM Movie_Comments c
+                JOIN Movies m ON c.movie_id = m.movie_id
+                WHERE c.user_id = :uid
+                ORDER BY c.created_at DESC
+            ");
+            $stmt->execute(['uid' => $userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) { return []; }
+    }
+
     public function searchEntities($query, $type = 'all', $limit = 5)
     {
         if (!$this->conn)

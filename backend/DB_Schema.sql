@@ -1,6 +1,6 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS Movie_Actors, Movies, Actors, Directors, Genres;
+DROP TABLE IF EXISTS Movie_Comments, Watchlist, Movie_Unique_Genres, Unique_Genres, Movie_Actors, Movies, Actors, Directors, Genres, Users;
 SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE Genres (
@@ -30,7 +30,26 @@ CREATE TABLE Movies (
     director_id  INT           NOT NULL,
     genre_id     INT           NOT NULL,
     FOREIGN KEY (director_id) REFERENCES Directors(director_id),
-    FOREIGN KEY (genre_id)    REFERENCES Genres(genre_id)
+    FOREIGN KEY (genre_id)    REFERENCES Genres(genre_id),
+    INDEX (release_year),
+    INDEX (language),
+    INDEX (revenue),
+    INDEX (rating_imdb)
+);
+
+-- ── NORMALIZED GENRE SUPPORT ──────────────────────────────────────────────
+-- Supports movies with multiple comma-separated genres for trend analysis
+CREATE TABLE Unique_Genres (
+    single_genre_id INT PRIMARY KEY AUTO_INCREMENT,
+    genre_name      VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE Movie_Unique_Genres (
+    movie_id        INT NOT NULL,
+    single_genre_id INT NOT NULL,
+    PRIMARY KEY (movie_id, single_genre_id),
+    FOREIGN KEY (movie_id)        REFERENCES Movies(movie_id) ON DELETE CASCADE,
+    FOREIGN KEY (single_genre_id) REFERENCES Unique_Genres(single_genre_id) ON DELETE CASCADE
 );
 
 -- Junction table: Movies <-> Actors (M:N)
@@ -180,6 +199,28 @@ CREATE TABLE IF NOT EXISTS Users (
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ── PERSONALIZATION & ENGAGEMENT ──────────────────────────────────────────
+
+-- User Watchlist
+CREATE TABLE Watchlist (
+    user_id VARCHAR(50) NOT NULL,
+    movie_id INT NOT NULL,
+    PRIMARY KEY (user_id, movie_id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Movie Discussion Board
+CREATE TABLE Movie_Comments (
+    comment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL,
+    movie_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES Movies(movie_id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 -- No Functions or Triggers explicitly requested by syllabus constraints.
 -- Advanced logic is handled via Views or direct queries (DQL).
