@@ -455,23 +455,36 @@ class DataService
     }
 
     /**
-     * Efficiently fetches top non-Hindi regional films
+     * Efficiently fetches top non-Hindi regional films or top films for a specific language
      */
-    public function getTopRegionalMovies($limit = 5)
+    public function getTopRegionalMoviesForLanguage(string $lang = 'all', int $limit = 5)
     {
-        return $this->cachedQuery("top_regional_$limit", function () use ($limit) {
+        return $this->cachedQuery("top_regional_{$lang}_{$limit}", function () use ($lang, $limit) {
             if (!$this->conn)
                 return [];
             try {
-                $stmt = $this->conn->prepare("
-                    SELECT m.movie_id, m.title, m.revenue, m.language, m.rating_imdb, 
-                           CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genre
-                    FROM Movies m
-                    JOIN Directors d ON m.director_id = d.director_id
-                    JOIN Genres g ON m.genre_id = g.genre_id
-                    WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%' AND m.language != 'hi'
-                    ORDER BY m.revenue DESC LIMIT :limit
-                ");
+                if ($lang === 'all') {
+                    $stmt = $this->conn->prepare("
+                        SELECT m.movie_id, m.title, m.revenue, m.language, m.rating_imdb, 
+                               CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genre
+                        FROM Movies m
+                        JOIN Directors d ON m.director_id = d.director_id
+                        JOIN Genres g ON m.genre_id = g.genre_id
+                        WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%' AND m.language != 'hi'
+                        ORDER BY m.revenue DESC LIMIT :limit
+                    ");
+                } else {
+                    $stmt = $this->conn->prepare("
+                        SELECT m.movie_id, m.title, m.revenue, m.language, m.rating_imdb, 
+                               CONCAT(d.first_name, ' ', d.last_name) as director, d.director_id, g.genre_name as genre
+                        FROM Movies m
+                        JOIN Directors d ON m.director_id = d.director_id
+                        JOIN Genres g ON m.genre_id = g.genre_id
+                        WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%' AND m.language = :lang
+                        ORDER BY m.revenue DESC LIMIT :limit
+                    ");
+                    $stmt->bindValue(':lang', $lang);
+                }
                 $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
                 $stmt->execute();
                 return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -479,6 +492,11 @@ class DataService
                 return [];
             }
         });
+    }
+
+    public function getTopRegionalMovies($limit = 5)
+    {
+        return $this->getTopRegionalMoviesForLanguage('all', $limit);
     }
 
     public function getActorDirectorCollaborations($limit = 5)
@@ -756,9 +774,13 @@ class DataService
                 return [];
             try {
                 $stmt = $this->conn->prepare("
-                    SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director, AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count
+                    SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director, 
+                           AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count,
+                           (SELECT m2.language FROM Movies m2
+                            WHERE m2.director_id = d.director_id AND m2.language IS NOT NULL
+                            GROUP BY m2.language ORDER BY COUNT(*) DESC LIMIT 1) as language
                     FROM Directors d
-                    JOIN Movies m ON d.director_id = d.director_id
+                    JOIN Movies m ON m.director_id = d.director_id
                     WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
                     GROUP BY d.director_id
                     HAVING COUNT(m.movie_id) >= 3
@@ -958,7 +980,11 @@ class DataService
                 SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
                        COUNT(ma.movie_id) as movie_count,
                        SUM(m.revenue) as total_revenue,
-                       ROUND(AVG(m.rating_imdb), 2) as avg_rating
+                       ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                       (SELECT m2.language FROM Movies m2
+                        JOIN Movie_Actors ma2 ON m2.movie_id = ma2.movie_id
+                        WHERE ma2.actor_id = a.actor_id AND m2.language IS NOT NULL
+                        GROUP BY m2.language ORDER BY COUNT(*) DESC LIMIT 1) as language
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
                 JOIN Movies m ON ma.movie_id = m.movie_id
@@ -973,6 +999,111 @@ class DataService
         } catch (PDOException $e) {
             return [];
         }
+    }
+
+    /**
+     * Top actors by total revenue for a specific language/industry.
+     * When $lang is 'all', returns global top actors (same as getTopActorsByRevenue).
+     */
+    public function getTopActorsByRevenueForLanguage(string $lang, int $limit = 5): array
+    {
+        $cacheKey = "top_actors_rev_lang_{$lang}_{$limit}";
+        return $this->cachedQuery($cacheKey, function () use ($lang, $limit) {
+            if (!$this->conn) return [];
+            try {
+                if ($lang === 'all') {
+                    $sql = "
+                        SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
+                               COUNT(ma.movie_id) as movie_count,
+                               SUM(m.revenue) as total_revenue,
+                               ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                               :lang as language
+                        FROM Actors a
+                        JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                        JOIN Movies m ON ma.movie_id = m.movie_id
+                        WHERE a.first_name NOT LIKE '%Unknown%' AND m.revenue > 0
+                        GROUP BY a.actor_id
+                        ORDER BY total_revenue DESC
+                        LIMIT :limit
+                    ";
+                } else {
+                    // Filter movies by the given language, then rank actors by revenue in that industry
+                    $sql = "
+                        SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
+                               COUNT(ma.movie_id) as movie_count,
+                               SUM(m.revenue) as total_revenue,
+                               ROUND(AVG(m.rating_imdb), 2) as avg_rating,
+                               :lang as language
+                        FROM Actors a
+                        JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
+                        JOIN Movies m ON ma.movie_id = m.movie_id
+                        WHERE a.first_name NOT LIKE '%Unknown%'
+                          AND m.revenue > 0
+                          AND m.language = :lang
+                        GROUP BY a.actor_id
+                        ORDER BY total_revenue DESC
+                        LIMIT :limit
+                    ";
+                }
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindValue(':lang', $lang);
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                return [];
+            }
+        });
+    }
+
+    /**
+     * Top directors by avg revenue for a specific language/industry.
+     * When $lang is 'all', returns global top directors.
+     */
+    public function getTopDirectorsByRevenueForLanguage(string $lang, int $limit = 5): array
+    {
+        $cacheKey = "top_dirs_rev_lang_{$lang}_{$limit}";
+        return $this->cachedQuery($cacheKey, function () use ($lang, $limit) {
+            if (!$this->conn) return [];
+            try {
+                if ($lang === 'all') {
+                    $sql = "
+                        SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director,
+                               AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count,
+                               :lang as language
+                        FROM Directors d
+                        JOIN Movies m ON m.director_id = d.director_id
+                        WHERE m.revenue > 0 AND d.first_name NOT LIKE '%Unknown%'
+                        GROUP BY d.director_id
+                        HAVING COUNT(m.movie_id) >= 2
+                        ORDER BY avg_revenue DESC
+                        LIMIT :limit
+                    ";
+                } else {
+                    $sql = "
+                        SELECT d.director_id, CONCAT(d.first_name, ' ', d.last_name) as director,
+                               AVG(m.revenue) as avg_revenue, COUNT(m.movie_id) as movie_count,
+                               :lang as language
+                        FROM Directors d
+                        JOIN Movies m ON m.director_id = d.director_id
+                        WHERE m.revenue > 0
+                          AND d.first_name NOT LIKE '%Unknown%'
+                          AND m.language = :lang
+                        GROUP BY d.director_id
+                        HAVING COUNT(m.movie_id) >= 2
+                        ORDER BY avg_revenue DESC
+                        LIMIT :limit
+                    ";
+                }
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindValue(':lang', $lang);
+                $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                return [];
+            }
+        });
     }
 
     public function getGenreRevenuePerFilm($limit = 6)
