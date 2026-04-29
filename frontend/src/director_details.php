@@ -26,6 +26,16 @@ foreach ($films as $f) {
     $genreStats[$g] = ($genreStats[$g] ?? 0) + 1;
 }
 arsort($genreStats);
+
+// Extended stats
+$collaborators = $service->getDirectorCollaborators($director['name'], 6);
+$bestRating = !empty($films) ? max(array_column($films, 'rating_imdb')) : 0;
+$bestFilm = null;
+foreach ($films as $f) {
+    if ((float)$f['rating_imdb'] === (float)$bestRating) { $bestFilm = $f; break; }
+}
+$careerSpan = ($director['career_latest'] && $director['career_start']) ? ($director['career_latest'] - $director['career_start'] + 1) : 0;
+$avgRevPerFilm = $director['total_films'] > 0 ? round($director['total_revenue'] / $director['total_films']) : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -100,7 +110,9 @@ arsort($genreStats);
                         <div class="pm-item"><span class="pm-val"><?= $director['total_films'] ?></span><span class="pm-lbl">Total Films</span></div>
                         <div class="pm-item"><span class="pm-val">★ <?= number_format($director['avg_rating'], 1) ?></span><span class="pm-lbl">Avg Rating</span></div>
                         <div class="pm-item"><span class="pm-val">₹<?= formatRevenue($director['total_revenue']) ?></span><span class="pm-lbl">Total Box Office</span></div>
-                        <div class="pm-item"><span class="pm-val"><?= $director['career_start'] ?> - <?= $director['career_latest'] ?></span><span class="pm-lbl">Active Years</span></div>
+                        <div class="pm-item"><span class="pm-val"><?= $director['career_start'] ?> – <?= $director['career_latest'] ?></span><span class="pm-lbl">Active Years</span></div>
+                        <div class="pm-item"><span class="pm-val">★ <?= number_format($bestRating, 1) ?></span><span class="pm-lbl">Best Film Rating</span></div>
+                        <div class="pm-item"><span class="pm-val">₹<?= formatRevenue($avgRevPerFilm) ?></span><span class="pm-lbl">Avg Rev / Film</span></div>
                     </div>
                 </div>
             </div>
@@ -122,6 +134,38 @@ arsort($genreStats);
                 </div>
             </div>
 
+            <!-- Career Highlights Bar -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border-color); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 1.25rem;">
+                <div style="background: var(--bg-card); padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-primary);"><?= $careerSpan ?></div>
+                    <div style="font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Year Career Span</div>
+                </div>
+                <div style="background: var(--bg-card); padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #f5c518;">★ <?= number_format($bestRating, 1) ?></div>
+                    <div style="font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Peak IMDb</div>
+                </div>
+                <div style="background: var(--bg-card); padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent-green);"><?= count($genreStats) ?></div>
+                    <div style="font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Genres Worked In</div>
+                </div>
+                <div style="background: var(--bg-card); padding: 1rem; text-align: center;">
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #a68dff;">₹<?= formatRevenue($avgRevPerFilm) ?></div>
+                    <div style="font-size: 0.6rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.25rem;">Avg Rev / Film</div>
+                </div>
+            </div>
+
+            <?php if ($bestFilm): ?>
+            <div style="background: var(--bg-card); border: 1px solid var(--accent-primary); border-radius: var(--radius-md); padding: 0.8rem 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 1.6rem;">🏆</span>
+                <div>
+                    <div style="font-size: 0.62rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.2rem;">Best Rated Film</div>
+                    <a href="movie_details.php?id=<?= $bestFilm['movie_id'] ?>" style="color: var(--text-primary); font-weight: 700; text-decoration: none; font-size: 0.95rem;"><?= htmlspecialchars($bestFilm['title']) ?></a>
+                    <span style="color: #f5c518; font-size: 0.8rem; margin-left: 0.6rem;">★ <?= number_format($bestFilm['rating_imdb'], 1) ?></span>
+                    <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.4rem;">(<?= $bestFilm['yr'] ?>)</span>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <h2 class="font-bold mb-4">Complete Filmography</h2>
             <div class="film-grid">
                 <?php foreach ($films as $f): ?>
@@ -131,9 +175,43 @@ arsort($genreStats);
                             <span><?= $f['yr'] ?> • <?= $f['genres'] ?></span>
                             <span class="text-accent font-bold">★ <?= number_format($f['rating_imdb'], 1) ?></span>
                         </div>
+                        <div style="margin-top: 0.35rem; font-size: 0.7rem; color: var(--accent-green);">₹<?= formatRevenue($f['revenue']) ?></div>
                     </a>
                 <?php endforeach; ?>
             </div>
+
+            <?php if (!empty($collaborators)): ?>
+            <h2 class="font-bold" style="margin-top: 2rem; margin-bottom: 1rem;">Frequent Collaborating Actors</h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem;">
+                <?php foreach ($collaborators as $c): ?>
+                <a href="actor_details.php?id=<?= $c['actor_id'] ?>" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.7rem 1.1rem; display: flex; align-items: center; gap: 0.75rem; transition: all 0.2s; text-decoration: none; color: inherit;" onmouseover="this.style.borderColor='var(--accent-primary)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.transform='translateY(0)'">
+                    <span style="font-size: 1.4rem;">🎭</span>
+                    <div>
+                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-primary);"><?= htmlspecialchars($c['name']) ?></div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);"><?= $c['films'] ?> film<?= $c['films'] > 1 ? 's' : '' ?> together</div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
+            <!-- Per-Film Rating Comparison Chart -->
+            <?php if (count($films) > 1): ?>
+            <div class="chart-card" style="margin-top: 1rem;">
+                <div class="chart-header">
+                    <h3 class="font-bold">Per-Film Rating Comparison</h3>
+                    <p class="text-xs text-muted">IMDb scores across all films — sorted by rating</p>
+                </div>
+                <?php
+                    $sortedFilms = $films;
+                    usort($sortedFilms, fn($a, $b) => $b['rating_imdb'] <=> $a['rating_imdb']);
+                    $chartH = max(200, count($sortedFilms) * 38 + 40);
+                ?>
+                <div class="chart-wrap" style="height: <?= $chartH ?>px; margin-top: 1rem;">
+                    <canvas id="perFilmChart"></canvas>
+                </div>
+            </div>
+            <?php endif; ?>
 
         </div>
     </main>
@@ -165,8 +243,8 @@ arsort($genreStats);
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    y: { type: 'linear', display: true, position: 'left', grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e' } },
-                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#8b8d9e' } },
+                    y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Revenue (₹)', color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e' } },
+                    y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'IMDb Rating', color: '#6b7280', font: { size: 10 } }, grid: { drawOnChartArea: false }, ticks: { color: '#8b8d9e', min: 0, max: 10 } },
                     x: { grid: { display: false }, ticks: { color: '#8b8d9e' } }
                 },
                 plugins: { 
@@ -202,6 +280,38 @@ arsort($genreStats);
                 plugins: { legend: { position: 'bottom', labels: { color: '#8b8d9e', boxWidth: 10, padding: 15 } } }
             }
         });
+
+        <?php if (count($films) > 1):
+            usort($films, fn($a, $b) => $b['rating_imdb'] <=> $a['rating_imdb']);
+        ?>
+        const ctxPF = document.getElementById('perFilmChart').getContext('2d');
+        new Chart(ctxPF, {
+            type: 'bar',
+            data: {
+                labels: <?= json_encode(array_map(fn($f) => $f['title'] . ' (' . $f['yr'] . ')', $films)) ?>,
+                datasets: [{
+                    label: 'IMDb Rating',
+                    data: <?= json_encode(array_column($films, 'rating_imdb')) ?>,
+                    backgroundColor: <?= json_encode(array_map(fn($f) => $f['rating_imdb'] >= 7.5 ? 'rgba(52,211,153,0.8)' : ($f['rating_imdb'] >= 5 ? 'rgba(245,197,24,0.8)' : 'rgba(239,68,68,0.8)'), $films)) ?>,
+                    borderRadius: 4,
+                    barPercentage: 0.7
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: '#1e1f2a', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8b8d9e', callbacks: { label: ctx => '★ ' + ctx.raw } }
+                },
+                scales: {
+                    x: { min: 0, max: 10, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e', font: { size: 10 } }, title: { display: true, text: 'IMDb Rating', color: '#6b7280', font: { size: 10 } } },
+                    y: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 } } }
+                }
+            }
+        });
+        <?php endif; ?>
     </script>
 </body>
 </html>

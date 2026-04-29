@@ -140,15 +140,23 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="a-content">
              <table class="mini-table">
               <tr><th>Actor</th><th style="text-align:right;">Movie / Revenue</th></tr>
-              <?php foreach ($oneHitWonders as $ohw): ?>
-              <tr>
-                <td style="font-weight: 600; color: var(--accent-primary);"><?= htmlspecialchars($ohw['actor']) ?></td>
-                <td style="text-align:right;">
-                  <div style="font-size: 0.8rem;"><?= htmlspecialchars($ohw['title']) ?></div>
-                  <div style="color: var(--accent-green); font-size: 0.7rem; font-weight: bold;">&#x20B9;<?= formatRevenue($ohw['revenue']) ?></div>
-                </td>
-              </tr>
-              <?php endforeach; ?>
+               <?php foreach ($oneHitWonders as $ohw): ?>
+               <tr>
+                 <td style="font-weight: 600; color: var(--accent-primary);">
+                   <?php if (!empty($ohw['actor_id'])): ?>
+                   <a href="actor_details.php?id=<?= $ohw['actor_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($ohw['actor']) ?></a>
+                   <?php else: ?><?= htmlspecialchars($ohw['actor']) ?><?php endif; ?>
+                 </td>
+                 <td style="text-align:right;">
+                   <div style="font-size: 0.8rem;">
+                     <?php if (!empty($ohw['movie_id'])): ?>
+                     <a href="movie_details.php?id=<?= $ohw['movie_id'] ?>" style="color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($ohw['title']) ?></a>
+                     <?php else: ?><?= htmlspecialchars($ohw['title']) ?><?php endif; ?>
+                   </div>
+                   <div style="color: var(--accent-green); font-size: 0.7rem; font-weight: bold;">&#x20B9;<?= formatRevenue($ohw['revenue']) ?></div>
+                 </td>
+               </tr>
+               <?php endforeach; ?>
             </table>
           </div>
         </div>
@@ -301,7 +309,9 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               <tr><th>Director</th><th style="text-align:right;">Films</th><th style="text-align:right;">Avg Rating</th></tr>
               <?php foreach ($topDirsByCount as $td): ?>
               <tr>
-                <td style="font-weight:600;"><?= htmlspecialchars($td['director']) ?></td>
+                <td style="font-weight:600;">
+                  <a href="director_details.php?id=<?= $td['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($td['director']) ?></a>
+                </td>
                 <td style="text-align:right; color:var(--accent-primary); font-weight:700;"><?= $td['movie_count'] ?></td>
                 <td style="text-align:right;">&#x2605; <?= number_format($td['avg_rating'],1) ?></td>
               </tr>
@@ -400,7 +410,12 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                 },
                 scales: {
                     x: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e', font: { size: 10 } }, beginAtZero: true }
+                    y: {
+                        title: { display: true, text: 'Movies Released', color: '#6b7280', font: { size: 10, weight: 'bold' } },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#8b8d9e', font: { size: 10 } },
+                        beginAtZero: true
+                    }
                 }
             }
         });

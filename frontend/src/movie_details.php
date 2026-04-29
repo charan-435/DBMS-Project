@@ -732,8 +732,39 @@ $comments = $service->getMovieComments($movie['movie_id']);
             </div>
           <?php endif; ?>
 
+          <?php if ($genreAvgRev > 0 || $langAvgRev > 0): ?>
+          <div class="info-card">
+            <h3>Performance vs Peers</h3>
+            <?php if ($genreAvgRev > 0): ?>
+            <div class="stat-row">
+              <span class="stat-lbl">vs <?= htmlspecialchars($movie['genre_name']) ?> Avg</span>
+              <span class="stat-val" style="color: <?= $movie['revenue'] >= $genreAvgRev ? 'var(--accent-green)' : '#ef4444' ?>;">
+                <?= $movie['revenue'] >= $genreAvgRev ? '+' : '' ?><?= round(($movie['revenue'] / $genreAvgRev - 1) * 100) ?>%
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Genre Avg</span>
+              <span class="stat-val" style="font-size: 0.78rem; color: var(--text-secondary);"><?= fmtRev($genreAvgRev) ?></span>
+            </div>
+            <?php endif; ?>
+            <?php if ($langAvgRev > 0): ?>
+            <div class="stat-row">
+              <span class="stat-lbl">vs <?= strtoupper($movie['language']) ?> Avg</span>
+              <span class="stat-val" style="color: <?= $movie['revenue'] >= $langAvgRev ? 'var(--accent-green)' : '#ef4444' ?>;">
+                <?= $movie['revenue'] >= $langAvgRev ? '+' : '' ?><?= round(($movie['revenue'] / $langAvgRev - 1) * 100) ?>%
+              </span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-lbl">Industry Avg</span>
+              <span class="stat-val" style="font-size: 0.78rem; color: var(--text-secondary);"><?= fmtRev($langAvgRev) ?></span>
+            </div>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+
           <div class="info-card">
             <h3>Browse Similar</h3>
+
             <a href="movies.php?genre=<?= $movie['genre_id'] ?>"
               style="display:block; padding:0.6rem 0; font-size:0.82rem; color:var(--accent-primary); text-decoration:none; border-bottom:1px solid var(--border-color);">🎭
               More <?= htmlspecialchars($movie['genre_name']) ?> films →</a>
@@ -983,11 +1014,8 @@ $comments = $service->getMovieComments($movie['movie_id']);
             });
             const data = await res.json();
             if (data.status === 'success') {
-                if (data.status_code === 'added' || data.status === 'success' && data.status_msg !== 'removed') {
-                    // Logic from backend returns {status: 'added'} or {status: 'removed'}
-                }
-                // Update button based on actual status returned from backend
-                if (data.status === 'added') {
+                // Update button based on actual action returned from backend
+                if (data.action === 'added') {
                     btn.innerText = '✓ ADDED TO WATCHLIST';
                     btn.className = 'btn-outline';
                     btn.style.borderColor = 'var(--accent-green)';
@@ -997,6 +1025,7 @@ $comments = $service->getMovieComments($movie['movie_id']);
                     btn.className = 'btn-accent';
                     btn.style.borderColor = '';
                     btn.style.color = '';
+                    btn.style.background = ''; // Reset background if it was changed
                 }
             }
         } catch (e) {

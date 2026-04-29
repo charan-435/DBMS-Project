@@ -10,6 +10,12 @@
     <a href="movies.php" class="nav-item <?= ($currentPage == 'movies.php') ? 'active' : '' ?>">
       Browse Movies
     </a>
+    <a href="actors.php" class="nav-item <?= ($currentPage == 'actors.php') ? 'active' : '' ?>">
+      Actors
+    </a>
+    <a href="compare.php" class="nav-item <?= ($currentPage == 'compare.php') ? 'active' : '' ?>">
+      Compare
+    </a>
     <a href="explore.php" class="nav-item <?= ($currentPage == 'explore.php') ? 'active' : '' ?>">
       Explore Data
     </a>

@@ -23,7 +23,11 @@ if ($action === 'toggle_watchlist') {
     }
     $res = $service->toggleWatchlist($userId, $movieId);
     ob_clean();
-    echo json_encode($res ? array_merge(['status' => 'success'], (array)$res) : ['status' => 'error']);
+    if ($res && isset($res['status'])) {
+        echo json_encode(['status' => 'success', 'action' => $res['status']]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Operation failed']);
+    }
     exit;
 }
 

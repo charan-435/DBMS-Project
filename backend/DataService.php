@@ -364,7 +364,7 @@ class DataService
             return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as name, COUNT(ma.movie_id) as films
+                SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as name, COUNT(ma.movie_id) as films
                 FROM Movies m
                 JOIN Directors d ON m.director_id = d.director_id
                 JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
@@ -704,7 +704,9 @@ class DataService
             return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as actor, MAX(m.title) as title, MAX(m.revenue) as revenue
+                SELECT a.actor_id, MAX(m.movie_id) as movie_id,
+                       CONCAT(a.first_name, ' ', a.last_name) as actor,
+                       MAX(m.title) as title, MAX(m.revenue) as revenue
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
                 JOIN Movies m ON ma.movie_id = m.movie_id
@@ -914,13 +916,46 @@ class DataService
         }
     }
 
+    /**
+     * Returns the highest-rated movie for each genre (for genres page leaderboard)
+     */
+    public function getTopFilmPerGenre($limit = 16)
+    {
+        return $this->cachedQuery("top_film_per_genre_$limit", function () use ($limit) {
+            if (!$this->conn) return [];
+            try {
+                $stmt = $this->conn->prepare("
+                    SELECT g.genre_name, m.movie_id, m.title, m.rating_imdb, m.release_year, m.revenue,
+                           CONCAT(d.first_name, ' ', d.last_name) as director_name, d.director_id
+                    FROM (
+                        SELECT genre_id, MAX(rating_imdb) as max_rating
+                        FROM Movies WHERE rating_imdb > 0
+                        GROUP BY genre_id
+                    ) best
+                    JOIN Movies m ON best.genre_id = m.genre_id AND m.rating_imdb = best.max_rating
+                    JOIN Genres g ON m.genre_id = g.genre_id
+                    JOIN Directors d ON m.director_id = d.director_id
+                    WHERE g.genre_name != 'Unknown' AND d.first_name NOT LIKE '%Unknown%'
+                    GROUP BY g.genre_id
+                    ORDER BY m.rating_imdb DESC
+                    LIMIT :limit
+                ");
+                $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+                $stmt->execute();
+                return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                return [];
+            }
+        });
+    }
+
     public function getTopActorsByRevenue($limit = 5)
     {
         if (!$this->conn)
             return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as actor,
+                SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
                        COUNT(ma.movie_id) as movie_count,
                        SUM(m.revenue) as total_revenue,
                        ROUND(AVG(m.rating_imdb), 2) as avg_rating
@@ -1411,8 +1446,10 @@ class DataService
         try {
             $stmt = $this->conn->prepare("
                 SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as actor,
+                    COUNT(DISTINCT g.genre_id) as genre_count,
                     COUNT(DISTINCT g.genre_id) as genres_count,
                     COUNT(ma.movie_id) as total_films,
+                    ROUND(AVG(m.rating_imdb), 1) as avg_rating,
                     GROUP_CONCAT(DISTINCT g.genre_name ORDER BY g.genre_name SEPARATOR ', ') as genres
                 FROM Actors a
                 JOIN Movie_Actors ma ON a.actor_id = ma.actor_id
@@ -1420,7 +1457,7 @@ class DataService
                 JOIN Genres g ON m.genre_id = g.genre_id
                 WHERE a.first_name NOT LIKE '%Unknown%'
                 GROUP BY a.actor_id
-                HAVING COUNT(DISTINCT g.genre_id) >= 2
+                HAVING COUNT(DISTINCT g.genre_id) >= 1
                 ORDER BY genres_count DESC, total_films DESC
                 LIMIT :limit
             ");
@@ -1554,7 +1591,8 @@ class DataService
             return [];
         try {
             $stmt = $this->conn->prepare("
-                SELECT CONCAT(a.first_name, ' ', a.last_name) as name,
+                SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) as name,
+                       COUNT(ma.movie_id) as movie_count,
                        COUNT(ma.movie_id) as total_films,
                        ROUND(AVG(m.rating_imdb), 2) as avg_rating,
                        SUM(m.revenue) as total_revenue,

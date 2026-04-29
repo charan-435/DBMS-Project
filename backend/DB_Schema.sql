@@ -190,6 +190,7 @@ BEGIN
       AND (p_genre = '' OR g.genre_name = p_genre);
 END //
 
+DELIMITER ;
 
 -- Users Table for Authentication
 CREATE TABLE IF NOT EXISTS Users (

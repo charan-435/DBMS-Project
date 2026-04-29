@@ -21,6 +21,7 @@ $bestYearPerGenre = $service2->getBestYearPerGenre();
 $langMap = ['hi' => 'Bollywood (Hindi)', 'ta' => 'Kollywood (Tamil)', 'te' => 'Tollywood (Telugu)', 'ml' => 'Mollywood (Malayalam)', 'kn' => 'Sandalwood (Kannada)', 'en' => 'English'];
 
 $allGenres = $service->getSingleGenres();
+$topFilmsPerGenre = $service->getTopFilmPerGenre(20);
 
 $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee', '#f97316'];
 ?>
@@ -152,6 +153,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             </select>
             <button class="btn-outline" onclick="addGenre()">Add Genre</button>
             <button class="btn-accent" onclick="updateGenreChart()">Update Graph</button>
+            <div style="display: flex; gap: 0.4rem; margin-left: 0.5rem;">
+              <button id="btn-bar" class="btn-accent" style="font-size: 0.7rem; padding: 0.4rem 0.75rem; border-radius: 20px;" onclick="setChartType('bar')">📊 Bar</button>
+              <button id="btn-line" class="btn-outline" style="font-size: 0.7rem; padding: 0.4rem 0.75rem; border-radius: 20px;" onclick="setChartType('line')">📈 Line</button>
+            </div>
           </div>
         </div>
         
@@ -305,12 +310,54 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
       </div>
       <?php endif; ?>
 
+      <?php if (!empty($topFilmsPerGenre)): ?>
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="trending-header">
+          <div>
+            <div class="trending-label">GENRE MASTERPIECES</div>
+            <h2 class="trending-title">Highest Rated Film Per Genre</h2>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Genre</th>
+              <th>Film</th>
+              <th>Director</th>
+              <th>Year</th>
+              <th style="text-align:right;">IMDb</th>
+              <th style="text-align:right;">Revenue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($topFilmsPerGenre as $tfg): ?>
+            <tr>
+              <td><span class="genre-badge genre-default" style="font-size: 0.65rem;"><?= htmlspecialchars(strtoupper($tfg['genre_name'])) ?></span></td>
+              <td>
+                <a href="movie_details.php?id=<?= $tfg['movie_id'] ?>" style="color:var(--text-primary); font-weight:600; text-decoration:none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($tfg['title']) ?></a>
+              </td>
+              <td>
+                <a href="director_details.php?id=<?= $tfg['director_id'] ?>" style="color:var(--text-muted); text-decoration:none; font-size:0.82rem;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-muted)'"><?= htmlspecialchars($tfg['director_name']) ?></a>
+              </td>
+              <td style="color:var(--text-muted); font-size:0.82rem;"><?= $tfg['release_year'] ?></td>
+              <td style="text-align:right; color:#f5c518; font-weight:700;">&#x2605; <?= number_format($tfg['rating_imdb'], 1) ?></td>
+              <td style="text-align:right; color:var(--accent-green); font-weight:600;">&#x20B9;<?= formatRevenue($tfg['revenue']) ?></td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <?php endif; ?>
+
       <div class="page-footer">THE CINEMATIC LENS &copy; 2026. DATA PROVIDED BY CINEANALYTICS GLOBAL.</div>
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     let genreChart = null;
+    let currentChartType = 'bar';
+    let lastChartLabels = [];
+    let lastChartDatasets = [];
     let selectedGenresList = ['Action', 'Romance'];
     const barColors = ['rgba(245, 197, 24, 0.85)', 'rgba(92, 214, 182, 0.85)', 'rgba(110, 168, 254, 0.85)', 'rgba(166, 141, 255, 0.85)', 'rgba(255, 130, 150, 0.85)', 'rgba(251, 191, 36, 0.85)', 'rgba(34, 211, 238, 0.85)'];
     const borderColors = ['#f5c518', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee'];
@@ -341,11 +388,49 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         renderGenreChips();
     }
 
+    function setChartType(type) {
+        currentChartType = type;
+        document.getElementById('btn-bar').className = type === 'bar' ? 'btn-accent' : 'btn-outline';
+        document.getElementById('btn-bar').style.cssText = 'font-size:0.7rem;padding:0.4rem 0.75rem;border-radius:20px;';
+        document.getElementById('btn-line').className = type === 'line' ? 'btn-accent' : 'btn-outline';
+        document.getElementById('btn-line').style.cssText = 'font-size:0.7rem;padding:0.4rem 0.75rem;border-radius:20px;';
+        if (lastChartLabels.length > 0) renderGenreChart(lastChartLabels, lastChartDatasets);
+    }
+
+    function renderGenreChart(years, rawDatasets) {
+        const ctx = document.getElementById('genreTrendChart').getContext('2d');
+        if (genreChart) genreChart.destroy();
+        const isLine = currentChartType === 'line';
+        const datasets = rawDatasets.map((ds, i) => ({
+            ...ds,
+            type: currentChartType,
+            fill: isLine ? false : undefined,
+            tension: isLine ? 0.4 : undefined,
+            borderWidth: isLine ? 2.5 : 1,
+            pointRadius: isLine ? 3 : undefined,
+            pointHoverRadius: isLine ? 5 : undefined,
+            backgroundColor: isLine ? borderColors[i % borderColors.length].replace(')', ',0.15)').replace('rgba','rgba').replace('#','rgba(').replace('rgba(','rgba(') : barColors[i % barColors.length],
+        }));
+        genreChart = new Chart(ctx, {
+            type: currentChartType,
+            data: { labels: years, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { color: '#8b8d9e', font: { size: 11, weight: 'bold' }, usePointStyle: true, padding: 15 } },
+                    tooltip: { backgroundColor: '#1e1f2a', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8b8d9e', padding: 10,
+                        callbacks: { afterLabel: ctx => { const prev = ctx.dataset.data[ctx.dataIndex - 1]; if (prev && prev > 0) { const chg = Math.round(((ctx.raw - prev) / prev) * 100); return 'vs prev year: ' + (chg >= 0 ? '+' : '') + chg + '%'; } return ''; } } }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+                    y: { title: { display: true, text: 'Movies Released', color: '#6b7280', font: { size: 10, weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e', font: { size: 10 } }, beginAtZero: true }
+                }
+            }
+        });
+    }
+
     async function updateGenreChart() {
-        if (selectedGenresList.length === 0) {
-            alert('Please select at least one genre to plot.');
-            return;
-        }
+        if (selectedGenresList.length === 0) { alert('Please select at least one genre to plot.'); return; }
 
         const resp = await fetch('api_explore.php', {
             method: 'POST',
@@ -372,27 +457,9 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             };
         });
         
-        const ctx = document.getElementById('genreTrendChart').getContext('2d');
-        if (genreChart) {
-            genreChart.destroy();
-        }
-        
-        genreChart = new Chart(ctx, {
-            type: 'bar',
-            data: { labels: years, datasets: datasets },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true, position: 'top', labels: { color: '#8b8d9e', font: { size: 11, weight: 'bold' }, usePointStyle: true, padding: 15 } },
-                    tooltip: { backgroundColor: '#1e1f2a', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8b8d9e', padding: 10 }
-                },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b8d9e', font: { size: 10 } }, beginAtZero: true }
-                }
-            }
-        });
+        lastChartLabels = years;
+        lastChartDatasets = datasets;
+        renderGenreChart(years, datasets);
     }
     
     window.addEventListener('load', function() {
