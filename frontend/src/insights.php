@@ -14,12 +14,12 @@ $actorDuos = $service->getRepeatCollaborators(3, 5);
 $genreTrend = $service->getGenreTrend();
 $langChamps = $service->getLanguageRevenueAverages(3);
 
-// Additional insights
 $langRatingComp = $service->getLanguageRatingComparison();
 $decadeRatings  = $service->getDecadeRatings();
 $topDirsByCount = $service->getTopDirectorsByCount(3);
+$allGenres      = $service->getSingleGenres();
 
-$barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296'];
+$barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee', '#f97316'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -140,15 +140,23 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <div class="a-content">
              <table class="mini-table">
               <tr><th>Actor</th><th style="text-align:right;">Movie / Revenue</th></tr>
-              <?php foreach ($oneHitWonders as $ohw): ?>
-              <tr>
-                <td style="font-weight: 600; color: var(--accent-primary);"><?= htmlspecialchars($ohw['actor']) ?></td>
-                <td style="text-align:right;">
-                  <div style="font-size: 0.8rem;"><?= htmlspecialchars($ohw['title']) ?></div>
-                  <div style="color: var(--accent-green); font-size: 0.7rem; font-weight: bold;">&#x20B9;<?= formatRevenue($ohw['revenue']) ?></div>
-                </td>
-              </tr>
-              <?php endforeach; ?>
+               <?php foreach ($oneHitWonders as $ohw): ?>
+               <tr>
+                 <td style="font-weight: 600; color: var(--accent-primary);">
+                   <?php if (!empty($ohw['actor_id'])): ?>
+                   <a href="actor_details.php?id=<?= $ohw['actor_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($ohw['actor']) ?></a>
+                   <?php else: ?><?= htmlspecialchars($ohw['actor']) ?><?php endif; ?>
+                 </td>
+                 <td style="text-align:right;">
+                   <div style="font-size: 0.8rem;">
+                     <?php if (!empty($ohw['movie_id'])): ?>
+                     <a href="movie_details.php?id=<?= $ohw['movie_id'] ?>" style="color: var(--text-primary); text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='var(--text-primary)'"><?= htmlspecialchars($ohw['title']) ?></a>
+                     <?php else: ?><?= htmlspecialchars($ohw['title']) ?><?php endif; ?>
+                   </div>
+                   <div style="color: var(--accent-green); font-size: 0.7rem; font-weight: bold;">&#x20B9;<?= formatRevenue($ohw['revenue']) ?></div>
+                 </td>
+               </tr>
+               <?php endforeach; ?>
             </table>
           </div>
         </div>
@@ -224,18 +232,26 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
         <div class="card insight-card" style="grid-column: span 2;">
           <div class="q-number">INSIGHT #7</div>
           <div class="q-title">Genre Trends Over Time</div>
-          <div class="q-desc">What is the production volume trend of Action versus Romance movies over the decades?</div>
+          <div class="q-desc">Compare production volume trends of multiple genres simultaneously.</div>
           
-          <?php
-            $trendYears = [];
-            $actionCounts = [];
-            $romanceCounts = [];
-            foreach ($genreTrend as $row) { 
-                $trendYears[] = (int)$row['yr'];
-                $actionCounts[] = (int)$row['action_count'];
-                $romanceCounts[] = (int)$row['romance_count'];
-            }
-          ?>
+          <!-- Genre Selection Controls -->
+          <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 1rem;" id="selected-genres-list">
+              <!-- Selected genres go here -->
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; align-items: center;">
+              <select id="genre-picker" class="builder-input" style="padding: 0.65rem 1rem; flex: 1; border-radius: 20px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-primary);">
+                <option value="">-- Select Genre --</option>
+                <?php foreach ($allGenres as $g): ?>
+                  <option value="<?= htmlspecialchars($g['genre_name']) ?>"><?= htmlspecialchars($g['genre_name']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn-outline" onclick="addGenre()">Add Genre</button>
+              <button class="btn-accent" onclick="updateGenreChart()">Update Graph</button>
+            </div>
+          </div>
+          
           <div style="height: 300px; margin-top: 1rem;">
              <canvas id="genreTrendChart"></canvas>
           </div>
@@ -293,7 +309,9 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               <tr><th>Director</th><th style="text-align:right;">Films</th><th style="text-align:right;">Avg Rating</th></tr>
               <?php foreach ($topDirsByCount as $td): ?>
               <tr>
-                <td style="font-weight:600;"><?= htmlspecialchars($td['director']) ?></td>
+                <td style="font-weight:600;">
+                  <a href="director_details.php?id=<?= $td['director_id'] ?>" style="color: inherit; text-decoration: none;" onmouseover="this.style.color='var(--accent-primary)'" onmouseout="this.style.color='inherit'"><?= htmlspecialchars($td['director']) ?></a>
+                </td>
                 <td style="text-align:right; color:var(--accent-primary); font-weight:700;"><?= $td['movie_count'] ?></td>
                 <td style="text-align:right;">&#x2605; <?= number_format($td['avg_rating'],1) ?></td>
               </tr>
@@ -308,31 +326,77 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
   </main>
 
   <script>
-    window.addEventListener('load', function() {
+    let genreChart = null;
+    let selectedGenresList = ['Action', 'Romance'];
+    const barColors = ['rgba(245, 197, 24, 0.85)', 'rgba(92, 214, 182, 0.85)', 'rgba(110, 168, 254, 0.85)', 'rgba(166, 141, 255, 0.85)', 'rgba(255, 130, 150, 0.85)', 'rgba(251, 191, 36, 0.85)', 'rgba(34, 211, 238, 0.85)'];
+    const borderColors = ['#f5c518', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296', '#fbbf24', '#22d3ee'];
+
+    function renderGenreChips() {
+        const container = document.getElementById('selected-genres-list');
+        container.innerHTML = selectedGenresList.map((g, i) => `
+            <div style="background: var(--accent-glow); color: var(--accent-primary); border: 1px solid var(--accent-primary); padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; animation: slideDown 0.2s ease-out;">
+                ${g} <span style="cursor:pointer; font-size: 1.1rem; line-height: 1; opacity: 0.7;" onclick="removeGenre('${g}')">&times;</span>
+            </div>
+        `).join('');
+    }
+
+    function addGenre() {
+        const picker = document.getElementById('genre-picker');
+        const val = picker.value;
+        if (val && !selectedGenresList.includes(val) && selectedGenresList.length < 7) {
+            selectedGenresList.push(val);
+            picker.value = '';
+            renderGenreChips();
+        } else if (selectedGenresList.length >= 7) {
+            alert('Maximum 7 genres allowed at once.');
+        }
+    }
+
+    function removeGenre(g) {
+        selectedGenresList = selectedGenresList.filter(x => x !== g);
+        renderGenreChips();
+    }
+
+    async function updateGenreChart() {
+        if (selectedGenresList.length === 0) {
+            alert('Please select at least one genre to plot.');
+            return;
+        }
+
+        const resp = await fetch('api_explore.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'get_genre_comparison', genres: selectedGenresList })
+        });
+        const result = await resp.json();
+        
+        if (result.status !== 'success' || !result.data || result.data.length === 0) return;
+        
+        const data = result.data;
+        const years = data.map(d => parseInt(d.yr));
+        
+        const datasets = selectedGenresList.map((genre, i) => {
+            const countKey = 'count' + i;
+            const counts = data.map(d => parseInt(d[countKey] || 0));
+            return {
+                label: genre,
+                data: counts,
+                backgroundColor: barColors[i % barColors.length],
+                borderColor: borderColors[i % borderColors.length],
+                borderWidth: 1,
+                borderRadius: 4
+            };
+        });
+        
         const ctx = document.getElementById('genreTrendChart').getContext('2d');
-        new Chart(ctx, {
+        
+        if (genreChart) {
+            genreChart.destroy();
+        }
+        
+        genreChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: <?= json_encode($trendYears) ?>,
-                datasets: [
-                    {
-                        label: 'Action',
-                        data: <?= json_encode($actionCounts) ?>,
-                        backgroundColor: 'rgba(245, 197, 24, 0.85)', // IMDb Yellow/Orange
-                        borderColor: '#f5c518',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Romance',
-                        data: <?= json_encode($romanceCounts) ?>,
-                        backgroundColor: 'rgba(92, 214, 182, 0.85)', // accent-green
-                        borderColor: '#5cd6b6',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }
-                ]
-            },
+            data: { labels: years, datasets: datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -340,33 +404,14 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                     legend: {
                         display: true,
                         position: 'top',
-                        labels: {
-                            color: '#8b8d9e',
-                            font: { size: 11, weight: 'bold' },
-                            usePointStyle: true,
-                            padding: 15
-                        }
+                        labels: { color: '#8b8d9e', font: { size: 11, weight: 'bold' }, usePointStyle: true, padding: 15 }
                     },
-                    tooltip: {
-                        backgroundColor: '#1e1f2a',
-                        borderColor: 'rgba(255,255,255,0.1)',
-                        borderWidth: 1,
-                        titleColor: '#f0f0f5',
-                        bodyColor: '#8b8d9e',
-                        padding: 10
-                    }
+                    tooltip: { backgroundColor: '#1e1f2a', borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1, titleColor: '#f0f0f5', bodyColor: '#8b8d9e', padding: 10 }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { 
-                            color: '#8b8d9e', 
-                            font: { size: 10 },
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    },
+                    x: { grid: { display: false }, ticks: { color: '#8b8d9e', font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
                     y: {
+                        title: { display: true, text: 'Movies Released', color: '#6b7280', font: { size: 10, weight: 'bold' } },
                         grid: { color: 'rgba(255,255,255,0.05)' },
                         ticks: { color: '#8b8d9e', font: { size: 10 } },
                         beginAtZero: true
@@ -374,6 +419,11 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                 }
             }
         });
+    }
+    
+    window.addEventListener('load', function() {
+        renderGenreChips();
+        updateGenreChart();
     });
   </script>
 </body>

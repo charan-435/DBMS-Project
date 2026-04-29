@@ -7,6 +7,8 @@ class Database {
     private static $password = "";
     private static $conn = null;
 
+    #private static $port = "3307";
+
     public static function getConnection() {
         if (self::$conn === null) {
             try {
@@ -17,7 +19,7 @@ class Database {
                 
                 // Now connect TO the specific database
                 self::$conn = new PDO(
-                    "mysql:host=" . self::$host . ";dbname=" . self::$db_name . ";charset=utf8",
+                    "mysql:host=" . self::$host . ";port=3306;dbname=" . self::$db_name . ";charset=utf8",
                     self::$username,
                     self::$password
                 );

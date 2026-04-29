@@ -75,11 +75,12 @@ $where  = ["d.first_name NOT LIKE '%Unknown%'"];
 $params = [];
 
 if ($search !== '') {
-    $where[]       = "(m.title LIKE :s1 OR d.first_name LIKE :s2 OR d.last_name LIKE :s3 OR CONCAT(d.first_name,' ',d.last_name) LIKE :s4)";
+    $where[]       = "(m.title LIKE :s1 OR d.first_name LIKE :s2 OR d.last_name LIKE :s3 OR CONCAT(d.first_name,' ',d.last_name) LIKE :s4 OR CONCAT(a.first_name,' ',a.last_name) LIKE :s5)";
     $params[':s1'] = "%$search%";
     $params[':s2'] = "%$search%";
     $params[':s3'] = "%$search%";
     $params[':s4'] = "%$search%";
+    $params[':s5'] = "%$search%";
 }
 if ($genreId !== null)   { $where[] = "m.genre_id = :gid";            $params[':gid']  = $genreId;    }
 if ($langRaw !== '')     { $where[] = "m.language = :lang";            $params[':lang'] = $langRaw;    }
@@ -91,20 +92,25 @@ if ($maxYear !== null)   { $where[] = "m.release_year <= :maxy";       $params['
 $whereSql = implode(' AND ', $where);
 
 // ─── Count ────────────────────────────────────────────────────────
-$cStmt = $pdo->prepare("SELECT COUNT(*) FROM Movies m
+$cStmt = $pdo->prepare("SELECT COUNT(DISTINCT m.movie_id) FROM Movies m
                          JOIN Directors d ON m.director_id = d.director_id
+                         JOIN Genres    g ON m.genre_id    = g.genre_id
+                         LEFT JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
+                         LEFT JOIN Actors a ON ma.actor_id = a.actor_id
                          WHERE $whereSql");
 foreach ($params as $k => $v) $cStmt->bindValue($k, $v);
 $cStmt->execute();
 $total = (int)$cStmt->fetchColumn();
 
 // ─── Fetch page ───────────────────────────────────────────────────
-$sql = "SELECT m.movie_id, m.title, m.release_year, m.revenue, m.rating_imdb, m.language,
+$sql = "SELECT DISTINCT m.movie_id, m.title, m.release_year, m.revenue, m.rating_imdb, m.language,
                CONCAT(d.first_name,' ',d.last_name) AS director_name, d.director_id,
                g.genre_name, g.genre_id
         FROM Movies m
         JOIN Directors d ON m.director_id = d.director_id
         JOIN Genres    g ON m.genre_id    = g.genre_id
+        LEFT JOIN Movie_Actors ma ON m.movie_id = ma.movie_id
+        LEFT JOIN Actors a ON ma.actor_id = a.actor_id
         WHERE $whereSql
         ORDER BY $orderBy
         LIMIT $limit OFFSET $offset";

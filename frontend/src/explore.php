@@ -700,18 +700,39 @@ $genreTrend = $service->getGenreTrend();
     function downloadCSV() {
       if(currentData.length === 0) { alert("Generate an insight first!"); return; }
       
-      let csv = `${currentDimName},${currentMetName}\n`;
+      let csv = "INSIGHT EXPORT REPORT\n";
+      csv += "Generated: " + new Date().toLocaleString() + "\n";
+      csv += "Dimension," + currentDimName + "\n";
+      csv += "Primary Metric," + currentMetName + "\n";
+      
+      // Add filters to header
+      const filters = [];
+      document.querySelectorAll('.filter-row').forEach(row => {
+        const f = row.querySelector('.f-field').value;
+        const o = row.querySelector('.f-op').value;
+        const v = row.querySelector('.f-val').value;
+        filters.push(`${f} ${o} ${v}`);
+      });
+      csv += "Filters," + (filters.length > 0 ? filters.join('; ') : "None") + "\n\n";
+      
+      // Column Headers
+      csv += "LABEL,PRIMARY VALUE,MOVIE COUNT,AVG RATING,TOTAL REVENUE (CR)\n";
+      
       currentData.forEach(row => {
-        // Escape quotes and wrap in quotes to handle commas in labels
-        let safeLabel = `"${(row.label || 'Unknown').toString().replace(/"/g, '""')}"`;
-        csv += `${safeLabel},${row.value}\n`;
+        const safeLabel = `"${(row.label || 'Unknown').toString().replace(/"/g, '""')}"`;
+        const val = row.value || 0;
+        const count = row.movie_count || 0;
+        const rating = row.rating_avg || 0;
+        const revenueCr = row.revenue_sum ? (parseFloat(row.revenue_sum) / 10000000).toFixed(2) : 0;
+        
+        csv += `${safeLabel},${val},${count},${rating},${revenueCr}\n`;
       });
       
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', 'movie_insights.csv');
+      link.setAttribute('download', 'cinematic_lens_insight.csv');
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
