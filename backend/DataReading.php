@@ -118,8 +118,7 @@ if ($file !== false) {
     $db->commit();
     fclose($file);
 
-    // --- IMPLICIT DATA CLEANING ---
-    // Fill movies having 0 revenue with the average revenue of non-zero films
+   
     try {
         $avgRes = $db->query("SELECT AVG(revenue) as avg_rev FROM Movies WHERE revenue > 0")->fetch(PDO::FETCH_ASSOC);
         $avgVal = $avgRes['avg_rev'] ?? 0;

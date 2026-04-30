@@ -37,7 +37,7 @@ CREATE TABLE Movies (
     INDEX (rating_imdb)
 );
 
--- ── NORMALIZED GENRE SUPPORT ──────────────────────────────────────────────
+
 -- Supports movies with multiple comma-separated genres for trend analysis
 CREATE TABLE Unique_Genres (
     single_genre_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -61,12 +61,7 @@ CREATE TABLE Movie_Actors (
     FOREIGN KEY (actor_id) REFERENCES Actors(actor_id) ON DELETE CASCADE
 );
 
--- Summary table removed to rely on DQL (Views/Queries instead)
 
-
--- ────────────────────────────────────────────────────────────
--- 2. VIEWS
--- ────────────────────────────────────────────────────────────
 
 -- Full movie info in a single view (joins Movies + Directors + Genres)
 CREATE OR REPLACE VIEW movie_full_details AS
@@ -136,9 +131,7 @@ JOIN Genres g        ON m.genre_id  = g.genre_id
 GROUP BY a.actor_id;
 
 
--- ────────────────────────────────────────────────────────────
--- 3. STORED PROCEDURES
--- ────────────────────────────────────────────────────────────
+
 
 DELIMITER //
 
@@ -201,7 +194,7 @@ CREATE TABLE IF NOT EXISTS Users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ── PERSONALIZATION & ENGAGEMENT ──────────────────────────────────────────
+
 
 -- User Watchlist
 CREATE TABLE Watchlist (
@@ -223,5 +216,3 @@ CREATE TABLE Movie_Comments (
     FOREIGN KEY (movie_id) REFERENCES Movies(movie_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- No Functions or Triggers explicitly requested by syllabus constraints.
--- Advanced logic is handled via Views or direct queries (DQL).
