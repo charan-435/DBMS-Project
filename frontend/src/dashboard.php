@@ -50,8 +50,8 @@ $revenueFormatted = $totalRevenue > 0 ? '&#x20B9;' . formatRevenue($totalRevenue
           Tracing the soul of Indian storytelling through two decades of metadata, box office triumphs, and genre performance insights.
         </p>
         <div class="hero-actions">
-          <a href="genres.php" class="btn-accent">Explore Trends &#x2197;</a>
-          <a href="insights.php" class="btn-outline">Genre Comparisons</a>
+          <a href="explore.php" class="btn-accent">Explore Trends &#x2197;</a>
+          <a href="genres.php" class="btn-outline">Genre Comparisons</a>
         </div>
       </div>
 

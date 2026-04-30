@@ -143,12 +143,9 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
           <?php else: ?>
             <p class="text-muted" style="text-align:center; padding:2rem;">No collaboration data available. Populate the database first.</p>
           <?php endif; ?>
-        </div>
+        </div> <!-- card end (Duos) -->
 
-        
-      <!--  Genre Versatility + Actor Pairs -->
-      <div class="collab-grid-equal">
-       
+        <!-- Most Versatile -->
         <div class="card">
           <div class="section-label">GENRE RANGE</div>
           <div class="card-title-collab">Most Versatile Actors</div>
@@ -160,14 +157,16 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
                 <span class="versatile-name"><?= htmlspecialchars($v['actor']) ?></span>
                 <span class="versatile-count"><?= $v['genres_count'] ?> genres · <?= $v['total_films'] ?> films</span>
               </div>
-             
             </div>
             <?php endforeach; ?>
           <?php else: ?>
             <p class="text-muted" style="text-align:center; padding:2rem;">No versatility data available.</p>
           <?php endif; ?>
-        </div>
+        </div> <!-- card end (Versatile) -->
+      </div> <!-- collab-grid end -->
 
+      <!-- Row 2: Co-Stars + Revenue -->
+      <div class="collab-grid-equal">
         <!-- Repeat Actor Pairs -->
         <div class="card">
           <div class="section-label">FREQUENT CO-STARS</div>
@@ -185,12 +184,9 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             </div>
             <?php endforeach; ?>
           <?php else: ?>
-            <p class="text-muted" style="text-align:center; padding:2rem;">No repeat collaborators found (need actors appearing in 2+ films together).</p>
+            <p class="text-muted" style="text-align:center; padding:2rem;">No repeat collaborators found.</p>
           <?php endif; ?>
         </div>
-      </div>
-      <!-- New Row: Actor Revenue Rankings + Director Diversity -->
-      <div class="collab-grid-equal" style="margin-top: 0;">
 
         <!-- Top Actors by Total Box Office -->
         <div class="card">
@@ -217,6 +213,10 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
             <p class="text-muted" style="text-align:center; padding:2rem;">No actor revenue data available.</p>
           <?php endif; ?>
         </div>
+      </div>
+
+      <!-- Row 3: Creative Range -->
+      <div class="collab-grid-equal" style="margin-top: 0;">
 
         <!-- Actors with Most Unique Directors -->
         <div class="card">
@@ -237,8 +237,30 @@ $barColors = ['var(--accent-primary)', '#5cd6b6', '#6ea8fe', '#a68dff', '#ff8296
               </div>
             </div>
             <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+
+        <!-- Top Directors -->
+        <div class="card">
+          <div class="section-label">DIRECTION GIANTS</div>
+          <div class="card-title-collab">Directors with Most Projects</div>
+          <?php if (!empty($topDirs)): ?>
+            <?php foreach ($topDirs as $i => $d): ?>
+            <div class="duo-item" style="padding: 0.65rem 0;">
+              <div class="duo-left">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-highlight); display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">🎬</div>
+                <div>
+                  <div class="font-semibold" style="font-size: 0.9rem;"><?= htmlspecialchars($d['director'] ?? 'Unknown Director') ?></div>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-weight: 700; font-size: 0.95rem;"><?= $d['movie_count'] ?></div>
+                <div class="text-xxs text-muted">MOVIES</div>
+              </div>
+            </div>
+            <?php endforeach; ?>
           <?php else: ?>
-            <p class="text-muted" style="text-align:center; padding:2rem;">No diversity data available.</p>
+            <p class="text-muted" style="text-align:center; padding:2rem;">No director data available.</p>
           <?php endif; ?>
         </div>
       </div>
