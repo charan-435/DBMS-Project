@@ -21,7 +21,7 @@ The Cinematic Lens is a no-code analytics engine and database management system 
 ![Actors Details](/screenshots/img-2.png)
 ![Directors Details](/screenshots/img-3.png)
 ![Compare Movies](/screenshots/img-4.png)
-![Genre](/screenshots/image-6.png)
+![Genre](/screenshots/img-6.png)
 ![Collaborations](/screenshots/img-7.png)
 ![Industry Intelligence](/screenshots/img-8.png)
 
